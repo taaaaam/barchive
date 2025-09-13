@@ -1,6 +1,37 @@
 // Cloudinary utility functions
 
 /**
+ * Upload a PDF file to Cloudinary
+ * @param file - The PDF file to upload
+ * @param folder - Optional folder name (defaults to 'newsletters')
+ * @returns Promise<string> - The secure URL of the uploaded PDF
+ */
+export async function uploadPDF(
+  file: File,
+  folder: string = "newsletters"
+): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "newsletters");
+  formData.append("folder", folder);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to upload PDF: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  return data.secure_url;
+}
+
+/**
  * Extract the public ID from a Cloudinary URL
  * @param url - The Cloudinary URL (e.g., https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/image.jpg)
  * @returns The public ID (e.g., folder/image)

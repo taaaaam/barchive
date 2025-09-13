@@ -65,6 +65,7 @@ export default function Home() {
             id: postDoc.id,
             slug: postDoc.id, // Use document ID as slug
             title: data.title || postDoc.id,
+            content: data.content || "",
             date:
               data.createdAt?.toDate?.()?.toISOString() ||
               new Date().toISOString(),
@@ -153,6 +154,7 @@ export default function Home() {
       const postRef = doc(db, "posts", updatedPost.id);
       await updateDoc(postRef, {
         title: updatedPost.title,
+        content: updatedPost.content,
         excerpt: updatedPost.excerpt,
         featuredImage: updatedPost.featuredImage,
         updatedAt: new Date(),
@@ -204,7 +206,8 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8 w-full flex flex-col justify-between min-h-screen">
           {/* Navigation */}
-          <div className="flex justify-between items-center mb-8">
+          {/* Desktop Layout */}
+          <div className="hidden md:flex justify-between items-center mb-8">
             {/* Left side - Navigation Links or empty space */}
             <div className="flex items-center gap-6">
               {user && userProfile && (
@@ -233,7 +236,15 @@ export default function Home() {
             </div>
 
             {/* Right side - Auth Status */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              {user && userProfile && (
+                <Link
+                  href="/newsletters"
+                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                >
+                  Newsletters
+                </Link>
+              )}
               {user && userProfile ? (
                 <ProfileDropdown
                   username={userProfile?.username}
@@ -246,7 +257,62 @@ export default function Home() {
               ) : (
                 <Link
                   href="/login"
-                  className="px-6 py-3 bg-white text-green rounded-lg hover:bg-gray-light transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  className="px-6 py-3 text-white hover:text-gray-light transition-all duration-300 text-sm font-semibold"
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="md:hidden mb-8">
+            {/* Title */}
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-serif font-bold text-white">
+                The BaRchive
+              </h1>
+            </div>
+
+            {/* Navigation Links */}
+            {user && userProfile && (
+              <div className="flex flex-wrap justify-center items-center gap-4 mb-4">
+                <Link
+                  href="/memories"
+                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                >
+                  Memories
+                </Link>
+                <Link
+                  href="/members"
+                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                >
+                  Delegations
+                </Link>
+                <Link
+                  href="/newsletters"
+                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                >
+                  Newsletters
+                </Link>
+              </div>
+            )}
+
+            {/* Auth Status */}
+            <div className="flex justify-center">
+              {user && userProfile ? (
+                <ProfileDropdown
+                  username={userProfile?.username}
+                  profilePicture={userProfile?.profilePicture}
+                />
+              ) : user ? (
+                <div className="px-6 py-3 bg-white/20 text-white rounded-lg">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-6 py-3 text-white hover:text-gray-light transition-all duration-300 text-sm font-semibold"
                 >
                   Sign In
                 </Link>
@@ -274,7 +340,7 @@ export default function Home() {
                   href="/create"
                   className="text-white hover:text-gray-light font-serif font-semibold text-lg transition-colors duration-300 underline hover:no-underline"
                 >
-                  Contribute to the Chronicle
+                  Contribute to The Chronicles
                 </Link>
               </div>
             )}

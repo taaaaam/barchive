@@ -14,6 +14,7 @@ export default function EditPostModal({
   onSave,
 }: EditPostModalProps) {
   const [title, setTitle] = useState(post.title || "");
+  const [content, setContent] = useState(post.content || "");
   const [excerpt, setExcerpt] = useState(post.excerpt || "");
   const [featuredImage, setFeaturedImage] = useState(post.featuredImage || "");
   const [saving, setSaving] = useState(false);
@@ -23,12 +24,17 @@ export default function EditPostModal({
       alert("Please enter a title for your post.");
       return;
     }
+    if (!content.trim()) {
+      alert("Please enter content for your post.");
+      return;
+    }
 
     setSaving(true);
     try {
       const updatedPost = {
         ...post,
         title: title.trim(),
+        content: content.trim(),
         excerpt: excerpt.trim(),
         featuredImage: featuredImage,
       };
@@ -94,6 +100,23 @@ export default function EditPostModal({
               />
               <p className="text-sm text-gray-500 mt-1">
                 {title.length}/100 characters
+              </p>
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-dark mb-2">
+                Content *
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                rows={12}
+                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                placeholder="Write your post content here... (Markdown supported)"
+              />
+              <p className="text-sm text-green mt-2">
+                💡 Tip: You can use Markdown formatting for rich text
               </p>
             </div>
 
@@ -170,7 +193,7 @@ export default function EditPostModal({
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || !title.trim()}
+              disabled={saving || !title.trim() || !content.trim()}
               className="px-6 py-3 bg-green text-white rounded-lg hover:bg-green-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-semibold"
             >
               {saving ? "Saving..." : "Save Changes"}

@@ -121,7 +121,17 @@ export default async function PostPage({
               className="prose prose-2xl max-w-none prose-headings:text-gray-dark prose-headings:font-serif prose-headings:font-bold prose-p:text-gray-dark prose-p:leading-relaxed prose-p:text-lg prose-a:text-green prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-dark prose-code:text-gray-dark prose-code:bg-green/10 prose-code:px-3 prose-code:py-2 prose-code:rounded prose-code:font-mono prose-pre:bg-gray-dark prose-pre:text-white prose-blockquote:border-l-green prose-blockquote:bg-green/5 prose-blockquote:pl-8 prose-blockquote:py-6 prose-blockquote:rounded-r prose-blockquote:text-gray-dark prose-li:text-gray-dark prose-ul:text-gray-dark prose-ol:text-gray-dark"
               style={{ color: "#1f2937" }}
             >
-              <ReactMarkdown>{post.content}</ReactMarkdown>
+              <ReactMarkdown>
+                {post.content
+                  ?.replace(/\n/g, "\n\n") // Convert single newlines to double newlines
+                  ?.replace(/\n\n\n+/g, (match) => {
+                    // Replace multiple consecutive newlines with paragraphs containing non-breaking spaces
+                    const newlineCount = match.length - 2;
+                    return (
+                      "\n\n" + "&nbsp;\n\n".repeat(Math.floor(newlineCount / 2))
+                    );
+                  }) || ""}
+              </ReactMarkdown>
             </div>
           </div>
         </article>

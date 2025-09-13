@@ -95,7 +95,7 @@ export default function CreatePost() {
           </Link>
           <div className="text-center">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
-              Contribute to The Chronicle
+              Contribute to The Chronicles
             </h1>
             <p className="text-white/80 text-xl font-light">
               Inscribe your wisdom into our distinguished collection
@@ -230,33 +230,6 @@ export default function CreatePost() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      {/* <footer className="bg-green text-white mt-20">
-        <div className="max-w-7xl mx-auto px-8 py-12">
-          <div className="text-center">
-            <h3 className="text-3xl font-serif font-bold mb-6">BaR</h3>
-            <p className="text-white/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
-              Preserving the wisdom of Yale's coolest society
-            </p>
-            <div className="flex justify-center items-center mb-8 gap-4">
-              <div className="w-12 h-12 bg-white/10 rounded-full border-2 border-white/20 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
-                </svg>
-              </div>
-            </div>
-            <p className="text-white/60 font-serif">
-              &copy; 2025 BaR. Est. 2011. Built with Next.js, Tailwind CSS &
-              Firebase.
-            </p>
-          </div>
-        </div>
-      </footer> */}
     </div>
   );
 }
