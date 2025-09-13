@@ -1,6 +1,82 @@
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Tagesschrift&display=swap");
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1f2937;
+  --white: #ffffff;
+  --green: #047528;
+  --green-light: #059669;
+  --green-dark: #035a1f;
+  --gray-light: #f9fafb;
+  --gray-medium: #6b7280;
+  --gray-dark: #374151;
+}
+
+/* Custom utilities */
+@layer utilities {
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .font-serif {
+    font-family: "Tagesschrift", serif;
+  }
+
+  .font-sans {
+    font-family: "Inter", sans-serif;
+  }
+
+  .text-white {
+    color: var(--white);
+  }
+
+  .text-green {
+    color: var(--green);
+  }
+
+  .text-green-light {
+    color: var(--green-light);
+  }
+
+  .text-green-dark {
+    color: var(--green-dark);
+  }
+
+  .bg-white {
+    background-color: var(--white);
+  }
+
+  .bg-green {
+    background-color: var(--green);
+  }
+
+  .bg-green-light {
+    background-color: var(--green-light);
+  }
+
+  .bg-green-dark {
+    background-color: var(--green-dark);
+  }
+
+  .bg-gray-light {
+    background-color: var(--gray-light);
+  }
+
+  .border-green {
+    border-color: var(--green);
+  }
+
+  .border-green-light {
+    border-color: var(--green-light);
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,7 +95,7 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
