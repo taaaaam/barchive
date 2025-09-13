@@ -154,7 +154,7 @@ export default function EditPostModal({
               ) : (
                 <ImageUpload
                   onImageUpload={handleImageUpload}
-                  className="w-full h-48 border-2 border-dashed border-green/30 rounded-lg flex items-center justify-center hover:border-green/50 transition-colors cursor-pointer"
+                  onImageRemove={() => {}}
                 />
               )}
             </div>
