@@ -124,7 +124,7 @@ export default async function PostPage({
               <ReactMarkdown>
                 {post.content
                   ?.replace(/\n/g, "\n\n") // Convert single newlines to double newlines
-                  ?.replace(/\n\n\n+/g, (match) => {
+                  ?.replace(/\n\n\n+/g, (match: string) => {
                     // Replace multiple consecutive newlines with paragraphs containing non-breaking spaces
                     const newlineCount = match.length - 2;
                     return (
