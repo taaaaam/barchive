@@ -214,7 +214,7 @@ export default function NewslettersPage() {
               Newsletters
             </h1>
             <p className="text-white/80 text-xl font-light">
-              Stay updated with BaR Club news and updates
+              Stay updated with BaR news and updates
             </p>
           </div>
         </div>
