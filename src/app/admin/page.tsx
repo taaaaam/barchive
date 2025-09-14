@@ -153,7 +153,7 @@ export default function AdminPage() {
       <footer className="bg-green text-white py-12 mt-20">
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center">
-            <h3 className="text-3xl font-serif font-bold mb-6">BaR</h3>
+            <h3 className="text-3xl font-serif font-bold mb-6">The BaRchive</h3>
             <p className="text-white/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
               Preserving the wisdom of Yale's coolest society
             </p>

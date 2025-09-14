@@ -48,7 +48,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-95"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-16">
           <div className="text-center">
-            <h3 className="text-3xl font-serif font-bold mb-6">BaR</h3>
+            <h3 className="text-3xl font-serif font-bold mb-6">The BaRchive</h3>
             <p className="text-gold/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
               Preserving the wisdom of Yale's coolest society
             </p>
