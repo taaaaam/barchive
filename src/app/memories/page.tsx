@@ -294,6 +294,7 @@ export default function MemoriesPage() {
                 <ProfileDropdown
                   username={userProfile.username}
                   profilePicture={userProfile.profilePicture}
+                  isAdmin={userProfile.isAdmin}
                 />
               )}
             </div>

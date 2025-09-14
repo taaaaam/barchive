@@ -48,12 +48,15 @@ export default function AdminDashboard() {
   >([]);
   const [isAdding, setIsAdding] = useState(false);
   const [deletingPost, setDeletingPost] = useState<string | null>(null);
+  const [cloudinaryUsage, setCloudinaryUsage] = useState<any>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
   const [classYears, setClassYears] = useState<string[]>([]);
 
   useEffect(() => {
     fetchMembers();
     fetchPosts();
     fetchClassYears();
+    fetchCloudinaryUsage();
   }, []);
 
   const fetchMembers = async () => {
@@ -115,6 +118,27 @@ export default function AdminDashboard() {
       console.error("Error fetching class years:", error);
       // Fallback to default years
       setClassYears(["2025", "2026", "2027", "2028", "2029"]);
+    }
+  };
+
+  const fetchCloudinaryUsage = async () => {
+    setUsageLoading(true);
+    try {
+      const response = await fetch("/api/cloudinary-usage");
+      console.log("API response status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Cloudinary usage data received:", data);
+        setCloudinaryUsage(data);
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to fetch Cloudinary usage:", errorData);
+      }
+    } catch (error) {
+      console.error("Error fetching Cloudinary usage:", error);
+    } finally {
+      setUsageLoading(false);
     }
   };
 
@@ -256,6 +280,131 @@ export default function AdminDashboard() {
           </p>
         </div>
 
+        {/* Cloudinary Storage Usage */}
+        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-serif font-bold text-gray-dark flex items-center">
+              <i className="fas fa-cloud mr-3 text-blue-600"></i>
+              Cloudinary Storage
+            </h3>
+            <button
+              onClick={fetchCloudinaryUsage}
+              disabled={usageLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {usageLoading ? (
+                <i className="fas fa-spinner fa-spin"></i>
+              ) : (
+                <i className="fas fa-sync-alt"></i>
+              )}
+            </button>
+          </div>
+
+          {cloudinaryUsage ? (
+            <div className="space-y-4">
+              {/* Storage Usage */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-semibold text-gray-dark">
+                    Storage Used
+                  </span>
+                  <span className="text-sm text-gray-medium">
+                    {cloudinaryUsage.storage.usedGB.toFixed(2)} GB /{" "}
+                    {cloudinaryUsage.storage.limitGB.toFixed(2)} GB
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className={`h-3 rounded-full transition-all duration-500 ${
+                      cloudinaryUsage.storage.percentage > 80
+                        ? "bg-red-500"
+                        : cloudinaryUsage.storage.percentage > 60
+                        ? "bg-yellow-500"
+                        : "bg-green-500"
+                    }`}
+                    style={{
+                      width: `${Math.min(
+                        cloudinaryUsage.storage.percentage,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-medium mt-1">
+                  <span>{cloudinaryUsage.storage.percentage}% used</span>
+                  <span>{cloudinaryUsage.plan} Plan</span>
+                </div>
+              </div>
+
+              {/* Objects and Bandwidth */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <i className="fas fa-images text-blue-600 mr-2"></i>
+                    <span className="text-sm font-semibold text-gray-dark">
+                      Objects
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-dark">
+                    {cloudinaryUsage.objects.used.toLocaleString()} /{" "}
+                    {cloudinaryUsage.objects.limit.toLocaleString()}
+                  </div>
+                </div>
+                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                  <div className="flex items-center mb-2">
+                    <i className="fas fa-tachometer-alt text-blue-600 mr-2"></i>
+                    <span className="text-sm font-semibold text-gray-dark">
+                      Bandwidth
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-dark">
+                    {(
+                      cloudinaryUsage.bandwidth.used /
+                      (1024 * 1024 * 1024)
+                    ).toFixed(2)}{" "}
+                    GB /{" "}
+                    {(
+                      cloudinaryUsage.bandwidth.limit /
+                      (1024 * 1024 * 1024)
+                    ).toFixed(2)}{" "}
+                    GB
+                  </div>
+                </div>
+              </div>
+
+              {/* Debug: Show raw data */}
+              {cloudinaryUsage.rawData && (
+                <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                  <details>
+                    <summary className="text-sm font-semibold text-gray-dark cursor-pointer">
+                      Debug: Raw API Response
+                    </summary>
+                    <pre className="text-xs text-gray-600 mt-2 overflow-auto">
+                      {JSON.stringify(cloudinaryUsage.rawData, null, 2)}
+                    </pre>
+                  </details>
+                </div>
+              )}
+            </div>
+          ) : usageLoading ? (
+            <div className="text-center py-4">
+              <i className="fas fa-spinner fa-spin text-blue-600 text-xl mb-2"></i>
+              <p className="text-gray-medium">Loading storage data...</p>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <i className="fas fa-exclamation-triangle text-yellow-500 text-xl mb-2"></i>
+              <p className="text-gray-medium">Failed to load storage data</p>
+              <button
+                onClick={fetchCloudinaryUsage}
+                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Tabs */}
         <div className="flex space-x-1 mb-8 bg-gray-light rounded-lg p-1">
           <button
@@ -374,45 +523,49 @@ export default function AdminDashboard() {
               All Members ({members.length})
             </h3>
 
-            <div className="grid gap-4">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className={`p-4 rounded-lg border-2 ${
-                    member.isClaimed
-                      ? "border-green bg-green/5"
-                      : "border-yellow-300 bg-yellow-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold text-gray-dark">
-                        {member.firstName} {member.lastName}
-                      </div>
-                      <div className="text-sm text-gray-medium">
-                        Class of {member.classYear}
-                        {member.email && ` • ${member.email}`}
-                      </div>
-                      {member.username && (
-                        <div className="text-sm text-green">
-                          Username: {member.username}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <div className="divide-y divide-gray-200">
+                {members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="font-semibold text-gray-dark">
+                            {member.firstName} {member.lastName}
+                          </div>
+                          <div className="text-sm text-gray-medium">
+                            Class of {member.classYear}
+                          </div>
+                          {member.email && (
+                            <div className="text-sm text-gray-500">
+                              {member.email}
+                            </div>
+                          )}
+                          {member.username && (
+                            <div className="text-sm text-green">
+                              @{member.username}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      {member.isClaimed ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green text-white">
-                          Claimed
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                          Available
-                        </span>
-                      )}
+                      </div>
+                      <div>
+                        {member.isClaimed ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green text-white">
+                            Claimed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Available
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -262,6 +262,7 @@ export default function Home() {
                   <ProfileDropdown
                     username={userProfile?.username}
                     profilePicture={userProfile?.profilePicture}
+                    isAdmin={userProfile?.isAdmin}
                   />
                 </div>
               ) : user ? (
@@ -333,6 +334,7 @@ export default function Home() {
                   <ProfileDropdown
                     username={userProfile?.username}
                     profilePicture={userProfile?.profilePicture}
+                    isAdmin={userProfile?.isAdmin}
                   />
                 </div>
               ) : user ? (

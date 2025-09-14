@@ -137,6 +137,7 @@ export default function AdminPage() {
                 <ProfileDropdown
                   username={userProfile.username}
                   profilePicture={userProfile.profilePicture}
+                  isAdmin={userProfile.isAdmin}
                 />
               )}
             </div>

@@ -185,6 +185,7 @@ export default function MemberPage({
                 <ProfileDropdown
                   username={userProfile.username}
                   profilePicture={userProfile.profilePicture}
+                  isAdmin={userProfile.isAdmin}
                 />
               )}
             </div>
