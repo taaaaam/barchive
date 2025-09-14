@@ -49,6 +49,7 @@ export default function MemoriesPage() {
   const [editingMemory, setEditingMemory] = useState<Memory | null>(null);
   const [deletingMemory, setDeletingMemory] = useState<string | null>(null);
   const [availableClassYears, setAvailableClassYears] = useState<string[]>([]);
+  const [showContent, setShowContent] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -116,6 +117,10 @@ export default function MemoriesPage() {
       console.error("Error fetching memories:", error);
     } finally {
       setLoading(false);
+      // Trigger fade-in after a brief delay
+      setTimeout(() => {
+        setShowContent(true);
+      }, 100);
     }
   };
 
@@ -231,12 +236,10 @@ export default function MemoriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
-        <div className="max-w-7xl mx-auto px-8 py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-medium">Loading memories...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-medium">Loading memories...</p>
         </div>
       </div>
     );
@@ -245,7 +248,11 @@ export default function MemoriesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
+      <header
+        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
@@ -303,7 +310,11 @@ export default function MemoriesPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-12">
+      <main
+        className={`max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <h2 className="text-3xl font-serif font-bold text-gray-dark">

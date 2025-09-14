@@ -33,6 +33,7 @@ export default function NewslettersPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showContent, setShowContent] = useState(false);
   const [newNewsletter, setNewNewsletter] = useState({
     title: "",
     pdfFile: null as File | null,
@@ -89,6 +90,10 @@ export default function NewslettersPage() {
       console.error("Error fetching newsletters:", error);
     } finally {
       setLoading(false);
+      // Trigger fade-in after a brief delay
+      setTimeout(() => {
+        setShowContent(true);
+      }, 100);
     }
   };
 
@@ -144,8 +149,8 @@ export default function NewslettersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-dark">Loading newsletters...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-medium">Loading newsletters...</p>
         </div>
       </div>
     );
@@ -154,7 +159,11 @@ export default function NewslettersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
+      <header
+        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
@@ -212,7 +221,11 @@ export default function NewslettersPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-6">
+      <div
+        className={`max-w-6xl mx-auto p-6 transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         {/* Add Newsletter Button */}
         {user && userProfile && (
           <div className="mb-8">

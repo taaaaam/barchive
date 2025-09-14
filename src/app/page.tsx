@@ -23,10 +23,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [showLogo, setShowLogo] = useState(false);
   const [editingPost, setEditingPost] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [showLogo, setShowLogo] = useState(false);
+  const [showNav, setShowNav] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -114,23 +115,20 @@ export default function Home() {
         setUserProfile(null);
         // Don't redirect to login - allow non-authenticated users to view home page
       }
-      // Hide initial loading overlay once auth is resolved
-      setIsInitialLoad(false);
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  // Trigger logo fade-in after initial load completes
+  // Trigger logo, navigation, and profile fade-in when component mounts
   useEffect(() => {
-    if (!isInitialLoad) {
-      // Small delay to ensure smooth transition from loading spinner
-      const timer = setTimeout(() => {
-        setShowLogo(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialLoad]);
+    const timer = setTimeout(() => {
+      setShowLogo(true);
+      setShowNav(true);
+      setShowProfile(true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleEditPost = (post: any) => {
     setEditingPost(post);
@@ -189,26 +187,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
-      {/* Loading Overlay */}
-      {isInitialLoad && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="relative">
-            {/* Spinning border */}
-            <div className="w-32 h-32 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-            {/* Logo in center */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Image
-                src="/assets/bar_logo_no_bg.png"
-                alt="BaR Logo"
-                width={80}
-                height={80}
-                className="w-20 h-20"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <header
         className={`bg-green shadow-2xl ${
@@ -223,7 +201,11 @@ export default function Home() {
             {/* Left side - Navigation Links or empty space */}
             <div className="flex items-center gap-6">
               {user && userProfile && (
-                <nav className="flex items-center gap-6">
+                <nav
+                  className={`flex items-center gap-6 transition-opacity duration-500 ease-in-out ${
+                    showNav ? "opacity-100" : "opacity-0"
+                  }`}
+                >
                   <Link
                     href="/memories"
                     className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
@@ -252,24 +234,38 @@ export default function Home() {
               {user && userProfile && (
                 <Link
                   href="/newsletters"
-                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                  className={`text-white hover:text-gray-light font-medium text-lg transition-all duration-500 ease-in-out ${
+                    showNav ? "opacity-100" : "opacity-0"
+                  }`}
                 >
                   Newsletters
                 </Link>
               )}
               {user && userProfile ? (
-                <ProfileDropdown
-                  username={userProfile?.username}
-                  profilePicture={userProfile?.profilePicture}
-                />
+                <div
+                  className={`transition-opacity duration-500 ease-in-out ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <ProfileDropdown
+                    username={userProfile?.username}
+                    profilePicture={userProfile?.profilePicture}
+                  />
+                </div>
               ) : user ? (
-                <div className="px-6 py-3 bg-white/20 text-white rounded-lg">
+                <div
+                  className={`px-6 py-3 bg-white/20 text-white rounded-lg transition-opacity duration-500 ease-in-out ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
+                >
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 </div>
               ) : (
                 <Link
                   href="/login"
-                  className="px-6 py-3 text-white hover:text-gray-light transition-all duration-300 text-sm font-semibold"
+                  className={`px-6 py-3 text-white hover:text-gray-light transition-all duration-500 ease-in-out text-sm font-semibold ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
                 >
                   Sign In
                 </Link>
@@ -288,7 +284,11 @@ export default function Home() {
 
             {/* Navigation Links */}
             {user && userProfile && (
-              <div className="flex flex-wrap justify-center items-center gap-4 mb-4">
+              <div
+                className={`flex flex-wrap justify-center items-center gap-4 mb-4 transition-opacity duration-500 ease-in-out ${
+                  showNav ? "opacity-100" : "opacity-0"
+                }`}
+              >
                 <Link
                   href="/memories"
                   className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
@@ -313,18 +313,30 @@ export default function Home() {
             {/* Auth Status */}
             <div className="flex justify-center">
               {user && userProfile ? (
-                <ProfileDropdown
-                  username={userProfile?.username}
-                  profilePicture={userProfile?.profilePicture}
-                />
+                <div
+                  className={`transition-opacity duration-500 ease-in-out ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <ProfileDropdown
+                    username={userProfile?.username}
+                    profilePicture={userProfile?.profilePicture}
+                  />
+                </div>
               ) : user ? (
-                <div className="px-6 py-3 bg-white/20 text-white rounded-lg">
+                <div
+                  className={`px-6 py-3 bg-white/20 text-white rounded-lg transition-opacity duration-500 ease-in-out ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
+                >
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 </div>
               ) : (
                 <Link
                   href="/login"
-                  className="px-6 py-3 text-white hover:text-gray-light transition-all duration-300 text-sm font-semibold"
+                  className={`px-6 py-3 text-white hover:text-gray-light transition-all duration-500 ease-in-out text-sm font-semibold ${
+                    showProfile ? "opacity-100" : "opacity-0"
+                  }`}
                 >
                   Sign In
                 </Link>
@@ -340,14 +352,18 @@ export default function Home() {
                 alt="BaR Logo"
                 width={300}
                 height={300}
-                className={`w-80 h-80 mx-auto transition-opacity duration-1000 ease-in-out ${
+                className={`w-80 h-80 mx-auto transition-opacity duration-500 ease-in-out ${
                   showLogo ? "opacity-100" : "opacity-0"
                 }`}
               />
             </div>
 
             {user && userProfile && (
-              <div>
+              <div
+                className={`transition-opacity duration-500 ease-in-out ${
+                  showProfile ? "opacity-100" : "opacity-0"
+                }`}
+              >
                 <Link
                   href="/create"
                   className="text-white hover:text-gray-light font-serif font-semibold text-lg transition-colors duration-300 underline hover:no-underline"
@@ -595,7 +611,13 @@ export default function Home() {
 
       {/* Footer - Only show for authenticated users */}
       {user && (
-        <footer className="bg-green text-white mt-32 relative">
+        <footer
+          className="bg-green text-white mt-32 relative"
+          style={{
+            boxShadow:
+              "0 -15px 35px -5px rgba(0, 0, 0, 0.25), 0 -15px 15px -5px rgba(0, 0, 0, 0.15)",
+          }}
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-95"></div>
           <div className="relative max-w-7xl mx-auto px-8 py-16">
             <div className="text-center">

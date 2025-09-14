@@ -29,6 +29,7 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showContent, setShowContent] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -121,6 +122,10 @@ export default function MembersPage() {
       console.error("Error fetching members:", error);
     } finally {
       setLoading(false);
+      // Trigger fade-in after a brief delay
+      setTimeout(() => {
+        setShowContent(true);
+      }, 100);
     }
   };
 
@@ -140,12 +145,10 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
-        <div className="max-w-7xl mx-auto px-8 py-20">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-medium">Loading members...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-medium">Loading members...</p>
         </div>
       </div>
     );
@@ -154,7 +157,11 @@ export default function MembersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
+      <header
+        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
@@ -212,7 +219,11 @@ export default function MembersPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-12">
+      <main
+        className={`max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
+          showContent ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <div className="mb-8">
           <h2 className="text-3xl font-serif font-bold text-gray-dark mb-2">
             All Members ({members.length})
