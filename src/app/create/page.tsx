@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import ImageUpload from "@/components/ImageUpload";
+import RichTextEditor from "@/components/RichTextEditor";
 
 export default function CreatePost() {
   const [title, setTitle] = useState("");
@@ -163,18 +164,12 @@ export default function CreatePost() {
                 >
                   Content *
                 </label>
-                <textarea
-                  id="content"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  required
-                  rows={15}
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium transition-colors resize-none"
-                  placeholder="Write your post content here... (Markdown supported)"
+                <RichTextEditor
+                  content={content}
+                  onChange={setContent}
+                  placeholder="Write your post content here..."
+                  className="w-full"
                 />
-                <p className="text-sm text-green mt-2">
-                  💡 Tip: You can use Markdown formatting for rich text
-                </p>
               </div>
 
               {/* Error Message */}

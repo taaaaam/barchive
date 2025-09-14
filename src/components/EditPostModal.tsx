@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import ImageUpload from "./ImageUpload";
+import RichTextEditor from "./RichTextEditor";
 
 interface EditPostModalProps {
   post: any;
@@ -108,16 +109,12 @@ export default function EditPostModal({
               <label className="block text-sm font-semibold text-gray-dark mb-2">
                 Content *
               </label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={12}
-                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
-                placeholder="Write your post content here... (Markdown supported)"
+              <RichTextEditor
+                content={content}
+                onChange={setContent}
+                placeholder="Write your post content here..."
+                className="w-full"
               />
-              <p className="text-sm text-green mt-2">
-                💡 Tip: You can use Markdown formatting for rich text
-              </p>
             </div>
 
             {/* Excerpt */}

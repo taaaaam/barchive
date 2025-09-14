@@ -116,3 +116,106 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Rich Text Editor Styles */
+.ProseMirror {
+  color: #111827 !important; /* Dark gray text for better readability */
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.ProseMirror p {
+  color: #111827 !important;
+  margin-bottom: 1rem;
+  min-height: 1.5rem; /* Ensure empty paragraphs have height */
+}
+
+.ProseMirror p:empty {
+  margin-bottom: 1rem;
+  min-height: 1.5rem;
+}
+
+.ProseMirror h1 {
+  color: #111827 !important;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.ProseMirror h2 {
+  color: #111827 !important;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.ProseMirror h3 {
+  color: #111827 !important;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.ProseMirror strong {
+  color: #111827 !important;
+  font-weight: bold;
+}
+
+.ProseMirror em {
+  color: #111827 !important;
+  font-style: italic;
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  color: #111827 !important;
+  margin-bottom: 1rem;
+}
+
+.ProseMirror li {
+  color: #111827 !important;
+}
+
+.ProseMirror blockquote {
+  color: #111827 !important;
+  border-left: 4px solid #047528;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+}
+
+.ProseMirror code {
+  color: #111827 !important;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: "Courier New", monospace;
+}
+
+.ProseMirror pre {
+  color: #111827 !important;
+  background-color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Post content display styles */
+.prose p {
+  margin-bottom: 1rem;
+  min-height: 1.5rem;
+}
+
+.prose p:empty {
+  margin-bottom: 1rem;
+  min-height: 1.5rem;
+}
