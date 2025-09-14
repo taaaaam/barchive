@@ -217,7 +217,13 @@ export default function ProfilePage() {
                 href="/members"
                 className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
               >
-                Members
+                Delegations
+              </Link>
+              <Link
+                href="/newsletters"
+                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+              >
+                Newsletters
               </Link>
             </div>
           </div>
