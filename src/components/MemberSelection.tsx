@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   collection,
   getDocs,
@@ -58,6 +58,7 @@ export default function MemberSelection({
   });
   const [newMemberKeyword, setNewMemberKeyword] = useState("");
   const [isAddingMember, setIsAddingMember] = useState(false);
+  const claimAccountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMembers();
@@ -122,6 +123,20 @@ export default function MemberSelection({
         "The phrase you have entered is not recognized. Please try again."
       );
     }
+  };
+
+  const handleMemberSelection = (member: Member) => {
+    setSelectedMember(member);
+
+    // Scroll to the claim account section after a short delay to ensure DOM update
+    setTimeout(() => {
+      if (claimAccountRef.current) {
+        claimAccountRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100);
   };
 
   const handleStartClaimProcess = () => {
@@ -427,7 +442,7 @@ export default function MemberSelection({
             {members.map((member) => (
               <button
                 key={member.id}
-                onClick={() => setSelectedMember(member)}
+                onClick={() => handleMemberSelection(member)}
                 className={`p-4 rounded-lg border-2 transition-all duration-300 text-left ${
                   selectedMember?.id === member.id
                     ? "border-green bg-green/10"
@@ -488,7 +503,7 @@ export default function MemberSelection({
         )}
 
         {selectedMember && (
-          <div className="border-t border-gray-200 pt-8">
+          <div ref={claimAccountRef} className="border-t border-gray-200 pt-8">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               {selectedMember.isClaimed ? "Log In" : "Claim Account"}
             </h3>
