@@ -1,12 +1,22 @@
 "use client";
 // src/app/posts/[slug]/page.tsx
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import {
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import Comments from "@/components/Comments";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 export default function PostPage({
   params,
@@ -16,6 +26,10 @@ export default function PostPage({
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [slug, setSlug] = useState<string>("");
+  const [user, setUser] = useState<User | null>(null);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -28,7 +42,18 @@ export default function PostPage({
   useEffect(() => {
     if (slug) {
       fetchPost();
+      fetchLikes();
     }
+  }, [slug]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser && slug) {
+        checkIfLiked();
+      }
+    });
+    return () => unsubscribe();
   }, [slug]);
 
   const fetchPost = async () => {
@@ -46,6 +71,66 @@ export default function PostPage({
       notFound();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLikes = async () => {
+    try {
+      const likesSnapshot = await getDocs(
+        collection(db, "posts", slug, "likes")
+      );
+      setLikeCount(likesSnapshot.size);
+    } catch (error) {
+      console.error("Error fetching likes:", error);
+    }
+  };
+
+  const checkIfLiked = async () => {
+    if (!user || !slug) return;
+
+    try {
+      const likesQuery = query(
+        collection(db, "posts", slug, "likes"),
+        where("userId", "==", user.uid)
+      );
+      const likesSnapshot = await getDocs(likesQuery);
+      setIsLiked(!likesSnapshot.empty);
+    } catch (error) {
+      console.error("Error checking if liked:", error);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user || !slug || likeLoading) return;
+
+    setLikeLoading(true);
+    try {
+      if (isLiked) {
+        // Unlike: find and delete the like document
+        const likesQuery = query(
+          collection(db, "posts", slug, "likes"),
+          where("userId", "==", user.uid)
+        );
+        const likesSnapshot = await getDocs(likesQuery);
+
+        if (!likesSnapshot.empty) {
+          await deleteDoc(likesSnapshot.docs[0].ref);
+          setLikeCount((prev) => prev - 1);
+          setIsLiked(false);
+        }
+      } else {
+        // Like: add a new like document
+        await addDoc(collection(db, "posts", slug, "likes"), {
+          userId: user.uid,
+          createdAt: new Date(),
+        });
+        setLikeCount((prev) => prev + 1);
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+    } finally {
+      setLikeLoading(false);
     }
   };
 
@@ -134,6 +219,42 @@ export default function PostPage({
                 {post.excerpt}
               </p>
             )}
+
+            {/* Cheers Button */}
+            <div className="mt-8 flex items-center gap-4">
+              <button
+                onClick={handleLike}
+                disabled={likeLoading}
+                className={`flex items-center gap-3 px-6 py-3 rounded-full border-2 transition-all duration-200 ${
+                  isLiked
+                    ? "bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100"
+                    : "bg-white border-gray-200 text-gray-600 hover:border-amber-200 hover:text-amber-600"
+                } ${
+                  likeLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:shadow-md"
+                }`}
+              >
+                <i
+                  className={`fas fa-martini-glass w-5 h-5 transition-all duration-200 ${
+                    isLiked ? "text-amber-600" : "text-gray-600"
+                  }`}
+                ></i>
+                <span className="font-medium">
+                  {likeLoading ? "..." : likeCount}{" "}
+                  {likeCount === 1 ? "Cheers!" : "Cheers!"}
+                </span>
+              </button>
+
+              {!user && (
+                <p className="text-sm text-gray-500">
+                  <Link href="/login" className="text-green hover:underline">
+                    Sign in
+                  </Link>{" "}
+                  to cheer this post
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Featured Image */}

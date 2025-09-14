@@ -73,6 +73,17 @@ export default function Home() {
             console.error("Error fetching comment count:", error);
           }
 
+          // Fetch like count
+          let likeCount = 0;
+          try {
+            const likesSnapshot = await getDocs(
+              collection(db, "posts", postDoc.id, "likes")
+            );
+            likeCount = likesSnapshot.size;
+          } catch (error) {
+            console.error("Error fetching like count:", error);
+          }
+
           postsData.push({
             id: postDoc.id,
             slug: postDoc.id, // Use document ID as slug
@@ -87,6 +98,7 @@ export default function Home() {
             authorProfilePicture: authorProfilePicture,
             featuredImage: data.featuredImage || null,
             commentCount: commentCount,
+            likeCount: likeCount,
           });
         }
         setPosts(postsData);
@@ -572,22 +584,31 @@ export default function Home() {
                             </svg>
                           </Link>
 
-                          {/* Comment Count */}
-                          <div className="flex items-center gap-1 text-gray-500 text-sm">
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                              />
-                            </svg>
-                            <span>{post.commentCount || 0}</span>
+                          {/* Like and Comment Count */}
+                          <div className="flex items-center gap-4 text-gray-500 text-sm">
+                            {/* Cheers Count */}
+                            <div className="flex items-center gap-1">
+                              <i className="fas fa-martini-glass w-4 h-4"></i>
+                              <span>{post.likeCount || 0}</span>
+                            </div>
+
+                            {/* Comment Count */}
+                            <div className="flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                />
+                              </svg>
+                              <span>{post.commentCount || 0}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -623,7 +644,9 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-95"></div>
           <div className="relative max-w-7xl mx-auto px-8 py-16">
             <div className="text-center">
-              <h3 className="text-3xl font-serif font-bold mb-6">BaR</h3>
+              <h3 className="text-3xl font-serif font-bold mb-6">
+                The BaRchive
+              </h3>
               <p className="text-white/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
                 Preserving the wisdom of Yale's coolest society
               </p>
