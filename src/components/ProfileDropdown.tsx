@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -73,10 +74,15 @@ export default function ProfileDropdown({
             <div className="flex items-center space-x-3">
               {profilePicture ? (
                 <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green/20">
-                  <img
+                  <Image
                     src={profilePicture}
                     alt={username || "Profile"}
+                    width={40}
+                    height={40}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
                   />
                 </div>
               ) : (

@@ -1,36 +1,70 @@
+"use client";
 // src/app/posts/[slug]/page.tsx
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import Comments from "@/components/Comments";
+import { useEffect, useState } from "react";
 
-export async function generateStaticParams() {
-  // For static generation, we'll generate params for common posts
-  // In a real app, you might want to fetch all post IDs from Firebase
-  return [
-    { slug: "welcome-to-our-blog" },
-    { slug: "getting-started" },
-    // Add more static params as needed
-  ];
-}
-
-export default async function PostPage({
+export default function PostPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+  const [post, setPost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [slug, setSlug] = useState<string>("");
 
-  // Fetch post from Firestore by document ID (slug)
-  const docRef = doc(db, "posts", slug);
-  const docSnap = await getDoc(docRef);
+  useEffect(() => {
+    const fetchParams = async () => {
+      const resolvedParams = await params;
+      setSlug(resolvedParams.slug);
+    };
+    fetchParams();
+  }, [params]);
 
-  if (!docSnap.exists()) {
-    notFound();
+  useEffect(() => {
+    if (slug) {
+      fetchPost();
+    }
+  }, [slug]);
+
+  const fetchPost = async () => {
+    try {
+      const docRef = doc(db, "posts", slug);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        notFound();
+      }
+
+      setPost(docSnap.data());
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      notFound();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+        <div className="max-w-6xl mx-auto px-8 py-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
+            <p className="text-gray-medium">Loading post...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const post = docSnap.data();
+  if (!post) {
+    notFound();
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
@@ -135,6 +169,9 @@ export default async function PostPage({
             </div>
           </div>
         </article>
+
+        {/* Comments Section */}
+        <Comments postId={slug} />
 
         {/* Navigation */}
         <div className="mt-20 flex justify-center">

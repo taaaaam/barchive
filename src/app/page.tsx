@@ -43,10 +43,11 @@ export default function Home() {
           console.log("No documents found in posts collection!");
         }
 
-        // Fetch posts with author profile pictures
+        // Fetch posts with author profile pictures and comment counts
         for (const postDoc of snapshot.docs) {
           const data = postDoc.data();
           let authorProfilePicture = null;
+          let commentCount = 0;
 
           // Fetch author's profile picture if authorId exists
           if (data.authorId) {
@@ -59,6 +60,16 @@ export default function Home() {
             } catch (error) {
               console.error("Error fetching author profile:", error);
             }
+          }
+
+          // Fetch comment count
+          try {
+            const commentsSnapshot = await getDocs(
+              collection(db, "posts", postDoc.id, "comments")
+            );
+            commentCount = commentsSnapshot.size;
+          } catch (error) {
+            console.error("Error fetching comment count:", error);
           }
 
           postsData.push({
@@ -74,6 +85,7 @@ export default function Home() {
             authorId: data.authorId,
             authorProfilePicture: authorProfilePicture,
             featuredImage: data.featuredImage || null,
+            commentCount: commentCount,
           });
         }
         setPosts(postsData);
@@ -521,25 +533,45 @@ export default function Home() {
                           </p>
                         )}
 
-                        <Link
-                          href={`/posts/${post.slug}`}
-                          className="inline-flex items-center text-green hover:text-green-dark font-medium text-sm transition-colors duration-200 group"
-                        >
-                          Read more
-                          <svg
-                            className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        <div className="flex items-center justify-between">
+                          <Link
+                            href={`/posts/${post.slug}`}
+                            className="inline-flex items-center text-green hover:text-green-dark font-medium text-sm transition-colors duration-200 group"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </Link>
+                            Read more
+                            <svg
+                              className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          </Link>
+
+                          {/* Comment Count */}
+                          <div className="flex items-center gap-1 text-gray-500 text-sm">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                              />
+                            </svg>
+                            <span>{post.commentCount || 0}</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Featured Image */}
