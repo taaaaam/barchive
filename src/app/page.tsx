@@ -458,9 +458,11 @@ export default function Home() {
                           <div className="flex items-center gap-2">
                             {post.authorProfilePicture ? (
                               <div className="w-5 h-5 rounded-full overflow-hidden">
-                                <img
+                                <Image
                                   src={post.authorProfilePicture}
                                   alt={post.authorName}
+                                  width={20}
+                                  height={20}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.currentTarget.style.display = "none";
