@@ -379,10 +379,10 @@ export default function Home() {
                 }`}
               >
                 <Link
-                  href="/create"
+                  href="#chronicles"
                   className="text-white hover:text-gray-light font-serif font-semibold text-lg transition-colors duration-300 underline hover:no-underline"
                 >
-                  Contribute to The Chronicles
+                  Read The Chronicles
                 </Link>
               </div>
             )}
@@ -447,10 +447,37 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-16">
-              <div className="text-center mb-16">
-                <h2 className="text-4xl font-serif font-bold text-gray-dark mb-6">
-                  The Chronicles
-                </h2>
+              <div className="grid grid-cols-3 items-center mb-16">
+                <div></div>
+                <div className="text-center">
+                  <h2
+                    id="chronicles"
+                    className="text-4xl font-serif font-bold text-gray-dark"
+                  >
+                    The Chronicles
+                  </h2>
+                </div>
+                <div className="flex justify-end">
+                  <Link
+                    href="/create"
+                    className="inline-flex items-center px-4 py-2 bg-green text-white font-serif font-semibold text-sm rounded-lg hover:bg-green-dark transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 border border-green/20"
+                  >
+                    <svg
+                      className="mr-1.5 w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Create a post
+                  </Link>
+                </div>
               </div>
               <div className="space-y-0">
                 {posts.map((post, index) => (
