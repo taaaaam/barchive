@@ -1,7 +1,7 @@
 "use client";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 interface RichTextEditorProps {
   content: string;
@@ -62,13 +62,13 @@ export default function RichTextEditor({
   className = "",
 }: RichTextEditorProps) {
   const [isFocused, setIsFocused] = useState(false);
-  const [processedContent, setProcessedContent] = useState("");
   const [hasSelection, setHasSelection] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  useEffect(() => {
-    const htmlContent = markdownToHtml(content);
-    setProcessedContent(htmlContent);
-  }, [content]);
+  // Only process content once on initial load, not on every change
+  const initialContent = React.useMemo(() => {
+    return markdownToHtml(content);
+  }, []); // Empty dependency array - only run once
 
   const editor = useEditor({
     extensions: [
@@ -78,10 +78,14 @@ export default function RichTextEditor({
         },
       }),
     ],
-    content: processedContent,
+    content: initialContent,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      const htmlContent = editor.getHTML();
+      // Only call onChange if content actually changed to prevent loops
+      if (htmlContent !== content) {
+        onChange(htmlContent);
+      }
       setHasSelection(!editor.state.selection.empty);
     },
     onSelectionUpdate: ({ editor }) => {
@@ -97,11 +101,12 @@ export default function RichTextEditor({
     },
   });
 
+  // Only update editor content when it's first initialized or when content changes externally
   useEffect(() => {
-    if (editor && processedContent !== editor.getHTML()) {
-      editor.commands.setContent(processedContent);
+    if (editor && !isInitialized) {
+      setIsInitialized(true);
     }
-  }, [editor, processedContent]);
+  }, [editor, isInitialized]);
 
   if (!editor) {
     return null;
