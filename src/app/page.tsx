@@ -36,8 +36,8 @@ export default function Home() {
       const postsData: any[] = [];
 
       try {
-        // Try without ordering first to see if documents exist
-        const q = collection(db, "posts");
+        // Query posts ordered by creation date (most recent first)
+        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
