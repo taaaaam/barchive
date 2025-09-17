@@ -30,6 +30,10 @@ export default function PostPage({
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
+  const [cheersUsers, setCheersUsers] = useState<
+    Array<{ firstName: string; lastName: string; createdAt: any }>
+  >([]);
+  const [showCheersTooltip, setShowCheersTooltip] = useState(false);
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -80,6 +84,33 @@ export default function PostPage({
         collection(db, "posts", slug, "likes")
       );
       setLikeCount(likesSnapshot.size);
+
+      // Fetch user profile information for each like
+      const usersWithProfiles = await Promise.all(
+        likesSnapshot.docs.map(async (likeDoc) => {
+          const likeData = likeDoc.data();
+          try {
+            const userDoc = await getDoc(doc(db, "users", likeData.userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              return {
+                firstName: userData.firstName || "Unknown",
+                lastName: userData.lastName || "User",
+                createdAt: likeData.createdAt,
+              };
+            }
+          } catch (error) {
+            console.error("Error fetching user profile:", error);
+          }
+          return {
+            firstName: "Unknown",
+            lastName: "User",
+            createdAt: likeData.createdAt,
+          };
+        })
+      );
+
+      setCheersUsers(usersWithProfiles);
     } catch (error) {
       console.error("Error fetching likes:", error);
     }
@@ -117,6 +148,9 @@ export default function PostPage({
           await deleteDoc(likesSnapshot.docs[0].ref);
           setLikeCount((prev) => prev - 1);
           setIsLiked(false);
+
+          // Remove from cheers users list - we'll refetch the data to ensure accuracy
+          fetchLikes();
         }
       } else {
         // Like: add a new like document
@@ -126,6 +160,9 @@ export default function PostPage({
         });
         setLikeCount((prev) => prev + 1);
         setIsLiked(true);
+
+        // Refresh the cheers users list to include the new like
+        fetchLikes();
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -222,29 +259,58 @@ export default function PostPage({
 
             {/* Cheers Button */}
             <div className="mt-8 flex items-center gap-4">
-              <button
-                onClick={handleLike}
-                disabled={likeLoading}
-                className={`flex items-center gap-3 px-6 py-3 rounded-full border-2 transition-all duration-200 ${
-                  isLiked
-                    ? "bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100"
-                    : "bg-white border-gray-200 text-gray-600 hover:border-amber-200 hover:text-amber-600"
-                } ${
-                  likeLoading
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:shadow-md"
-                }`}
-              >
-                <i
-                  className={`fas fa-martini-glass w-5 h-5 transition-all duration-200 ${
-                    isLiked ? "text-amber-600" : "text-gray-600"
+              <div className="relative">
+                <button
+                  onClick={handleLike}
+                  disabled={likeLoading}
+                  onMouseEnter={() => setShowCheersTooltip(true)}
+                  onMouseLeave={() => setShowCheersTooltip(false)}
+                  className={`flex items-center gap-3 px-6 py-3 rounded-full border-2 transition-all duration-200 ${
+                    isLiked
+                      ? "bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-amber-200 hover:text-amber-600"
+                  } ${
+                    likeLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:shadow-md"
                   }`}
-                ></i>
-                <span className="font-medium">
-                  {likeLoading ? "..." : likeCount}{" "}
-                  {likeCount === 1 ? "Cheers!" : "Cheers!"}
-                </span>
-              </button>
+                >
+                  <i
+                    className={`fas fa-martini-glass w-5 h-5 transition-all duration-200 ${
+                      isLiked ? "text-amber-600" : "text-gray-600"
+                    }`}
+                  ></i>
+                  <span className="font-medium">
+                    {likeLoading ? "..." : likeCount}{" "}
+                    {likeCount === 1 ? "Cheers!" : "Cheers!"}
+                  </span>
+                </button>
+
+                {/* Cheers Tooltip */}
+                {showCheersTooltip && cheersUsers.length > 0 && (
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-gray-900 text-white text-sm rounded-lg shadow-xl z-50 min-w-max max-w-xs">
+                    <div className="font-semibold mb-2 text-center">
+                      {cheersUsers.length}{" "}
+                      {cheersUsers.length === 1 ? "person" : "people"} cheered
+                      this post
+                    </div>
+                    <div className="space-y-1">
+                      {cheersUsers.slice(0, 10).map((cheersUser, index) => (
+                        <div key={index} className="text-gray-200">
+                          {cheersUser.firstName} {cheersUser.lastName}
+                        </div>
+                      ))}
+                      {cheersUsers.length > 10 && (
+                        <div className="text-gray-400 text-center">
+                          and {cheersUsers.length - 10} more...
+                        </div>
+                      )}
+                    </div>
+                    {/* Arrow pointing down */}
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                )}
+              </div>
 
               {!user && (
                 <p className="text-sm text-gray-500">
