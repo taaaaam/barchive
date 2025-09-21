@@ -212,9 +212,18 @@ export default function MembersPage() {
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
               Delegations
             </h1>
-            <p className="text-white/80 text-xl font-light">
+            <p className="text-white/80 text-xl font-light mb-6">
               Connect with fellow society members across all class years
             </p>
+            <a
+              href="https://docs.google.com/spreadsheets/d/1rilUXKw-u8cStAAnPhq9q0UmdDZsgL8AFkakjjCmbBA/edit?usp=sharing"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-6 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 rounded-lg transition-all duration-300 text-white font-semibold backdrop-blur-sm"
+            >
+              <i className="fas fa-external-link-alt mr-3"></i>
+              View Member Spreadsheet
+            </a>
           </div>
         </div>
       </header>

@@ -51,6 +51,8 @@ export default function AdminDashboard() {
   const [cloudinaryUsage, setCloudinaryUsage] = useState<any>(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [classYears, setClassYears] = useState<string[]>([]);
+  const [showAddClassModal, setShowAddClassModal] = useState(false);
+  const [newClassYear, setNewClassYear] = useState("");
 
   useEffect(() => {
     fetchMembers();
@@ -189,7 +191,7 @@ export default function AdminDashboard() {
 
   const parseMemberNames = (namesString: string) => {
     const names = namesString
-      .split(",")
+      .split("\n")
       .map((name) => name.trim())
       .filter((name) => name.length > 0);
 
@@ -245,6 +247,35 @@ export default function AdminDashboard() {
     } finally {
       setIsAdding(false);
     }
+  };
+
+  const handleAddNewClass = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newClassYear && !classYears.includes(newClassYear)) {
+      try {
+        // Save new class to Firebase
+        await addDoc(collection(db, "classes"), {
+          year: newClassYear,
+          createdAt: new Date(),
+        });
+
+        // Update local state
+        const updatedClassYears = [...classYears, newClassYear].sort();
+        setClassYears(updatedClassYears);
+        setNewMembers({ ...newMembers, classYear: newClassYear });
+
+        setShowAddClassModal(false);
+        setNewClassYear("");
+      } catch (error) {
+        console.error("Error adding new class:", error);
+        alert("Error adding new class. Please try again.");
+      }
+    }
+  };
+
+  const handleCancelAddClass = () => {
+    setShowAddClassModal(false);
+    setNewClassYear("");
   };
 
   if (loading) {
@@ -449,7 +480,7 @@ export default function AdminDashboard() {
             <form onSubmit={handleAddMembers} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-dark mb-2">
-                  Member Names (comma-separated)
+                  Member Names (one per line)
                 </label>
                 <textarea
                   value={newMembers.names}
@@ -458,13 +489,13 @@ export default function AdminDashboard() {
                     parseMemberNames(e.target.value);
                   }}
                   required
-                  rows={4}
+                  rows={6}
                   className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
-                  placeholder="Enter names separated by commas, e.g., Jack Smith, Harley Davidson, Jane Doe"
+                  placeholder="Enter names one per line, e.g.&#10;Jack Smith&#10;Harley Davidson&#10;Jane Doe"
                 />
                 <p className="text-sm text-gray-medium mt-1">
-                  Enter full names separated by commas. Each name will be split
-                  into first and last name.
+                  Enter full names one per line. Each name will be split into
+                  first and last name.
                 </p>
               </div>
 
@@ -472,19 +503,32 @@ export default function AdminDashboard() {
                 <label className="block text-sm font-semibold text-gray-dark mb-2">
                   Class Year
                 </label>
-                <select
-                  value={newMembers.classYear}
-                  onChange={(e) =>
-                    setNewMembers({ ...newMembers, classYear: e.target.value })
-                  }
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
-                >
-                  {classYears.map((year) => (
-                    <option key={year} value={year}>
-                      Class of {year}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={newMembers.classYear}
+                    onChange={(e) =>
+                      setNewMembers({
+                        ...newMembers,
+                        classYear: e.target.value,
+                      })
+                    }
+                    className="flex-1 px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  >
+                    {classYears.map((year) => (
+                      <option key={year} value={year}>
+                        Class of {year}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddClassModal(true)}
+                    className="px-4 py-3 bg-green/10 hover:bg-green/20 border-2 border-green/30 hover:border-green/50 rounded-lg transition-all duration-300 text-green font-semibold"
+                    title="Add new class"
+                  >
+                    <i className="fas fa-plus"></i>
+                  </button>
+                </div>
               </div>
 
               {/* Preview of parsed members */}
@@ -627,6 +671,68 @@ export default function AdminDashboard() {
                   <p className="text-gray-medium text-lg">No posts found.</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Add New Class Modal */}
+        {showAddClassModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 max-w-md w-full p-8 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+              <div className="relative">
+                <div className="text-center mb-6">
+                  <div className="inline-block p-3 bg-green/10 rounded-full border-2 border-green/30 mb-4">
+                    <i className="fas fa-plus text-green text-xl"></i>
+                  </div>
+                  <h3 className="text-2xl font-serif font-bold text-gray-dark mb-2">
+                    Add New Class
+                  </h3>
+                  <p className="text-gray-medium font-light">
+                    Enter the graduation year for the new class
+                  </p>
+                </div>
+
+                <form onSubmit={handleAddNewClass} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-dark mb-2">
+                      Graduation Year
+                    </label>
+                    <input
+                      type="text"
+                      value={newClassYear}
+                      onChange={(e) => setNewClassYear(e.target.value)}
+                      placeholder="e.g., 2030"
+                      required
+                      className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                    />
+                    {classYears.includes(newClassYear) && newClassYear && (
+                      <p className="text-red-600 text-sm mt-1">
+                        This class year already exists
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCancelAddClass}
+                      className="flex-1 py-3 px-4 bg-gray-light text-gray-dark font-semibold rounded-lg hover:bg-gray-200 transition-all duration-300"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={
+                        !newClassYear || classYears.includes(newClassYear)
+                      }
+                      className="flex-1 py-3 px-4 bg-green text-white font-semibold rounded-lg hover:bg-green-dark focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+                    >
+                      Add Class
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}
