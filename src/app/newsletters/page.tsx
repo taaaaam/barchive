@@ -14,6 +14,7 @@ import {
 import { getDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import { uploadPDF, extractPublicId, deleteCloudinaryImage } from "@/lib/cloudinary";
 
@@ -193,6 +194,31 @@ export default function NewslettersPage() {
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Convert PDF URL to preview image URL using Cloudinary transformations
+  const getPDFPreviewUrl = (pdfUrl: string): string => {
+    try {
+      // Cloudinary can generate a preview from PDF by converting it to an image
+      // We'll use the first page (pg_1) and convert to JPG format
+      // Transformations: f_jpg (format), pg_1 (page 1), w_300 (width), h_400 (height), c_fill (crop fill), q_auto (quality)
+      
+      // Handle different Cloudinary URL formats
+      if (pdfUrl.includes("/raw/upload/")) {
+        // For raw uploads, change to image endpoint and add transformations
+        return pdfUrl.replace("/raw/upload/", "/image/upload/f_jpg,pg_1,w_300,h_400,c_fill,q_auto/");
+      } else if (pdfUrl.includes("/upload/v")) {
+        // If it has a version, insert transformations after /upload/
+        return pdfUrl.replace("/upload/v", "/upload/f_jpg,pg_1,w_300,h_400,c_fill,q_auto/v");
+      } else if (pdfUrl.includes("/upload/")) {
+        // If it's using /upload/ without version, add transformations
+        return pdfUrl.replace("/upload/", "/upload/f_jpg,pg_1,w_300,h_400,c_fill,q_auto/");
+      }
+      return pdfUrl;
+    } catch (error) {
+      console.error("Error generating PDF preview URL:", error);
+      return pdfUrl;
+    }
   };
 
   if (loading) {
@@ -389,19 +415,53 @@ export default function NewslettersPage() {
                 key={newsletter.id}
                 className="bg-white rounded-lg shadow-lg p-6 border-2 border-green/20 hover:shadow-xl transition-shadow duration-300"
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-serif font-bold text-gray-dark mb-2">
-                      {newsletter.title}
-                    </h3>
-                    <p className="text-gray-medium mb-4">
-                      Issue Date: {formatDate(newsletter.issueDate)}
-                    </p>
-                    <p className="text-sm text-gray-light">
-                      Added by {newsletter.authorName}
-                    </p>
+                <div className="flex gap-6">
+                  {/* PDF Preview Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-32 h-40 rounded-lg overflow-hidden border-2 border-green/20 bg-gray-light relative">
+                      <Image
+                        src={getPDFPreviewUrl(newsletter.pdfUrl)}
+                        alt={`${newsletter.title} preview`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                        onError={(e) => {
+                          // Show fallback if preview fails to load
+                          const img = e.currentTarget;
+                          img.style.display = "none";
+                          const container = img.parentElement;
+                          if (container && !container.querySelector(".pdf-fallback")) {
+                            const fallback = document.createElement("div");
+                            fallback.className = "pdf-fallback w-full h-full flex items-center justify-center bg-green/10 absolute inset-0";
+                            fallback.innerHTML = `
+                              <svg class="w-12 h-12 text-green" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                              </svg>
+                            `;
+                            container.appendChild(fallback);
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="ml-4 flex items-center gap-3">
+
+                  {/* Newsletter Info */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-gray-dark mb-2">
+                        {newsletter.title}
+                      </h3>
+                      <p className="text-gray-medium mb-4">
+                        Issue Date: {formatDate(newsletter.issueDate)}
+                      </p>
+                      <p className="text-sm text-gray-light">
+                        Added by {newsletter.authorName}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col items-end gap-3">
                     <a
                       href={newsletter.pdfUrl}
                       target="_blank"
