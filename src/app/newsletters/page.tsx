@@ -6,6 +6,7 @@ import {
   collection,
   getDocs,
   addDoc,
+  deleteDoc,
   serverTimestamp,
   query,
   orderBy,
@@ -14,7 +15,7 @@ import { getDoc, doc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileDropdown from "@/components/ProfileDropdown";
-import { uploadPDF } from "@/lib/cloudinary";
+import { uploadPDF, extractPublicId, deleteCloudinaryImage } from "@/lib/cloudinary";
 
 interface Newsletter {
   id: string;
@@ -33,6 +34,7 @@ export default function NewslettersPage() {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deletingNewsletter, setDeletingNewsletter] = useState<string | null>(null);
   const [showContent, setShowContent] = useState(false);
   const [newNewsletter, setNewNewsletter] = useState({
     title: "",
@@ -103,8 +105,17 @@ export default function NewslettersPage() {
 
     setUploading(true);
     try {
+      console.log("🚀 Starting newsletter upload process...");
+      console.log("📋 Newsletter data:", {
+        title: newNewsletter.title,
+        issueDate: newNewsletter.issueDate,
+        file: newNewsletter.pdfFile.name,
+        fileSize: `${(newNewsletter.pdfFile.size / 1024 / 1024).toFixed(2)} MB`,
+      });
+
       // Upload PDF to Cloudinary
       const pdfUrl = await uploadPDF(newNewsletter.pdfFile);
+      console.log("✅ PDF uploaded successfully, saving to Firestore...");
 
       // Save newsletter data to Firestore
       await addDoc(collection(db, "newsletters"), {
@@ -116,13 +127,19 @@ export default function NewslettersPage() {
         createdAt: serverTimestamp(),
       });
 
+      console.log("✅ Newsletter saved successfully!");
+
       // Reset form and refresh list
       setNewNewsletter({ title: "", pdfFile: null, issueDate: "" });
       setShowAddForm(false);
       fetchNewsletters();
-    } catch (error) {
-      console.error("Error adding newsletter:", error);
-      alert("Error adding newsletter. Please try again.");
+    } catch (error: any) {
+      console.error("❌ Error adding newsletter:", error);
+      console.error("❌ Error stack:", error.stack);
+      
+      // Show more detailed error message
+      const errorMessage = error.message || "Unknown error occurred";
+      alert(`Error adding newsletter: ${errorMessage}\n\nCheck the browser console for more details.`);
     } finally {
       setUploading(false);
     }
@@ -134,6 +151,39 @@ export default function NewslettersPage() {
       setNewNewsletter({ ...newNewsletter, pdfFile: file });
     } else {
       alert("Please select a PDF file.");
+    }
+  };
+
+  const handleDeleteNewsletter = async (newsletterId: string, pdfUrl: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this newsletter? This action cannot be undone. This will also delete the PDF from Cloudinary."
+      )
+    ) {
+      return;
+    }
+
+    setDeletingNewsletter(newsletterId);
+    try {
+      // Delete the PDF from Cloudinary (PDFs are stored as "raw" resources)
+      const publicId = extractPublicId(pdfUrl);
+      if (publicId) {
+        const deleted = await deleteCloudinaryImage(publicId, "raw");
+        if (!deleted) {
+          console.warn("Failed to delete PDF from Cloudinary, but continuing with Firestore deletion");
+        }
+      }
+
+      // Delete the newsletter from Firestore
+      await deleteDoc(doc(db, "newsletters", newsletterId));
+
+      // Refresh the list
+      fetchNewsletters();
+    } catch (error) {
+      console.error("Error deleting newsletter:", error);
+      alert("Error deleting newsletter. Please try again.");
+    } finally {
+      setDeletingNewsletter(null);
     }
   };
 
@@ -351,7 +401,7 @@ export default function NewslettersPage() {
                       Added by {newsletter.authorName}
                     </p>
                   </div>
-                  <div className="ml-4">
+                  <div className="ml-4 flex items-center gap-3">
                     <a
                       href={newsletter.pdfUrl}
                       target="_blank"
@@ -371,6 +421,56 @@ export default function NewslettersPage() {
                       </svg>
                       View PDF
                     </a>
+                    {/* Show delete button for admins or the author */}
+                    {(userProfile?.isAdmin || newsletter.authorId === user?.uid) && (
+                      <button
+                        onClick={() => handleDeleteNewsletter(newsletter.id, newsletter.pdfUrl)}
+                        disabled={deletingNewsletter === newsletter.id}
+                        className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                      >
+                        {deletingNewsletter === newsletter.id ? (
+                          <>
+                            <svg
+                              className="animate-spin h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              />
+                            </svg>
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            Delete
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

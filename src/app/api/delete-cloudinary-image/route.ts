@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
-    const { publicId } = await request.json();
+    const { publicId, resourceType = "image" } = await request.json();
 
     if (!publicId) {
       return NextResponse.json(
@@ -34,8 +34,11 @@ export async function POST(request: NextRequest) {
     formData.append("api_key", apiKey);
     formData.append("signature", signature);
 
+    // Use the appropriate resource type (image, raw, video, etc.)
+    const resourceEndpoint = resourceType === "raw" ? "raw" : "image";
+    
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/${resourceEndpoint}/destroy`,
       {
         method: "POST",
         body: formData,
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
       const errorData = await response.json();
       console.error("Cloudinary delete error:", errorData);
       return NextResponse.json(
-        { error: "Failed to delete image" },
+        { error: `Failed to delete ${resourceType}` },
         { status: 500 }
       );
     }
@@ -57,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, result });
     } else {
       return NextResponse.json(
-        { error: "Image deletion failed" },
+        { error: `${resourceType} deletion failed` },
         { status: 500 }
       );
     }
