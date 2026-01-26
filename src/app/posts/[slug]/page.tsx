@@ -69,7 +69,8 @@ export default function PostPage({
         notFound();
       }
 
-      setPost(docSnap.data());
+      const postData = docSnap.data();
+      setPost(postData);
     } catch (error) {
       console.error("Error fetching post:", error);
       notFound();
@@ -186,6 +187,68 @@ export default function PostPage({
 
   if (!post) {
     notFound();
+  }
+
+  // Check if post is private and user is not the author
+  // Only check after loading is complete
+  const isPrivate = post.private || false;
+  const isAuthor = user && post.authorId === user.uid;
+  const canView = !isPrivate || isAuthor;
+
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+        <div className="max-w-6xl mx-auto px-8 py-20">
+          <div className="bg-white rounded-3xl shadow-2xl border-2 border-green/20 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent"></div>
+            <div className="relative px-12 py-16 text-center">
+              <div className="mb-8">
+                <div className="inline-block p-6 bg-red-50 rounded-full border-2 border-red-200 mb-6">
+                  <svg
+                    className="w-16 h-16 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <h1 className="text-4xl font-serif font-bold text-gray-dark mb-6">
+                Private Post
+              </h1>
+              <p className="text-xl text-gray-medium mb-12 max-w-2xl mx-auto leading-relaxed">
+                This post is private and can only be viewed by its author.
+              </p>
+              <Link
+                href="/"
+                className="inline-flex items-center px-8 py-4 bg-green text-white font-serif font-semibold text-lg rounded-lg hover:bg-green-dark transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-green/20"
+              >
+                <svg
+                  className="mr-3 w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Go Back
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -19,6 +19,7 @@ import EditPostModal from "@/components/EditPostModal";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const [allPosts, setAllPosts] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -28,12 +29,15 @@ export default function Home() {
   const [showLogo, setShowLogo] = useState(false);
   const [showNav, setShowNav] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [allPhotos, setAllPhotos] = useState<Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }>>([]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
     async function fetchPosts() {
       // Fetch posts from Firestore
       const postsData: any[] = [];
+      const photos: Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }> = [];
 
       try {
         // Query posts ordered by creation date (most recent first)
@@ -84,6 +88,16 @@ export default function Home() {
             console.error("Error fetching like count:", error);
           }
 
+          // Collect featured images for photo wheel
+          if (data.featuredImage && data.featuredImage.trim() !== '') {
+            photos.push({
+              url: data.featuredImage,
+              sourceType: 'post',
+              sourceTitle: data.title || postDoc.id,
+              sourceId: postDoc.id,
+            });
+          }
+
           postsData.push({
             id: postDoc.id,
             slug: postDoc.id, // Use document ID as slug
@@ -99,9 +113,46 @@ export default function Home() {
             featuredImage: data.featuredImage || null,
             commentCount: commentCount,
             likeCount: likeCount,
+            private: data.private || false,
           });
         }
-        setPosts(postsData);
+
+        // Fetch memories photos
+        try {
+          const memoriesQuery = query(
+            collection(db, "memories"),
+            orderBy("createdAt", "desc")
+          );
+          const memoriesSnapshot = await getDocs(memoriesQuery);
+          
+          memoriesSnapshot.docs.forEach((memoryDoc) => {
+            const memoryData = memoryDoc.data();
+            if (memoryData.photos && Array.isArray(memoryData.photos)) {
+              memoryData.photos.forEach((photo: string) => {
+                if (photo && photo.trim() !== '') {
+                  photos.push({
+                    url: photo,
+                    sourceType: 'memory',
+                    sourceTitle: memoryData.title || memoryDoc.id,
+                    sourceId: memoryDoc.id,
+                  });
+                }
+              });
+            }
+          });
+        } catch (error) {
+          console.error("Error fetching memories photos:", error);
+        }
+
+        // Filter out any photos with empty URLs and shuffle
+        const validPhotos = photos.filter(photo => photo.url && photo.url.trim() !== '');
+        const shuffledPhotos = validPhotos.sort(() => Math.random() - 0.5);
+        setAllPhotos(shuffledPhotos);
+        if (shuffledPhotos.length > 0) {
+          setCurrentPhotoIndex(Math.floor(Math.random() * shuffledPhotos.length));
+        }
+        
+        setAllPosts(postsData);
       } catch (error) {
         console.error("Error fetching posts:", error);
         // Fallback to empty array if Firebase fails
@@ -132,6 +183,24 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
+  // Filter posts based on user state and privacy settings
+  useEffect(() => {
+    const filteredPosts = allPosts.filter((post) => {
+      // If user is not logged in, only show public posts
+      if (!user) {
+        return !post.private;
+      }
+      // If user is the author, show all their posts (private or not)
+      if (post.authorId === user.uid) {
+        return true;
+      }
+      // Otherwise, only show public posts
+      return !post.private;
+    });
+    
+    setPosts(filteredPosts);
+  }, [allPosts, user]);
+
   // Trigger logo, navigation, and profile fade-in when component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -156,7 +225,7 @@ export default function Home() {
       try {
         await deleteDoc(doc(db, "posts", post.id));
         // Remove the post from the local state
-        setPosts(posts.filter((p) => p.id !== post.id));
+        setAllPosts(allPosts.filter((p) => p.id !== post.id));
         alert("Post deleted successfully!");
       } catch (error) {
         console.error("Error deleting post:", error);
@@ -179,12 +248,13 @@ export default function Home() {
         content: updatedPost.content,
         excerpt: updatedPost.excerpt,
         featuredImage: updatedPost.featuredImage,
+        private: updatedPost.private || false,
         updatedAt: new Date(),
       });
 
       // Update the local state
-      setPosts(
-        posts.map((p) =>
+      setAllPosts(
+        allPosts.map((p) =>
           p.id === updatedPost.id ? { ...p, ...updatedPost } : p
         )
       );
@@ -195,6 +265,26 @@ export default function Home() {
       console.error("Error updating post:", error);
       alert("Failed to update post. Please try again.");
     }
+  };
+
+  const getNextRandomPhoto = () => {
+    if (allPhotos.length === 0) return;
+    // Get a random index different from current
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * allPhotos.length);
+    } while (newIndex === currentPhotoIndex && allPhotos.length > 1);
+    setCurrentPhotoIndex(newIndex);
+  };
+
+  const getPreviousRandomPhoto = () => {
+    if (allPhotos.length === 0) return;
+    // Get a random index different from current
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * allPhotos.length);
+    } while (newIndex === currentPhotoIndex && allPhotos.length > 1);
+    setCurrentPhotoIndex(newIndex);
   };
 
   return (
@@ -447,6 +537,73 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-16">
+              {/* Photo Wheel */}
+              {allPhotos.length > 0 && allPhotos[currentPhotoIndex]?.url && allPhotos[currentPhotoIndex].url.trim() !== '' && (
+                <div className="mb-16">
+                  <div className="relative max-w-4xl mx-auto">
+                    <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-green/30 bg-gray-100">
+                      <Image
+                        src={allPhotos[currentPhotoIndex].url}
+                        alt="Random photo from The Chronicles"
+                        fill
+                        className="object-cover transition-opacity duration-500"
+                        priority
+                      />
+                      {/* Navigation Arrows */}
+                      <button
+                        onClick={getPreviousRandomPhoto}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-green p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
+                        aria-label="Previous random photo"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={getNextRandomPhoto}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-green p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
+                        aria-label="Next random photo"
+                      >
+                        <svg
+                          className="w-6 h-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    {/* Album Information */}
+                    {allPhotos[currentPhotoIndex]?.sourceTitle && (
+                      <div className="mt-4 text-center">
+                        <p className="text-gray-600 text-sm font-medium">
+                          From {allPhotos[currentPhotoIndex].sourceType === 'post' ? 'Post' : 'Memory'}:{' '}
+                          <span className="text-green font-semibold">
+                            {allPhotos[currentPhotoIndex].sourceTitle}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-3 items-center mb-16">
                 <div></div>
                 <div className="text-center">
@@ -533,6 +690,24 @@ export default function Home() {
                                 {post.authorName}
                               </span>
                             </span>
+                            {post.private && post.authorId === user?.uid && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full border border-amber-200">
+                                <svg
+                                  className="w-3 h-3"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
+                                </svg>
+                                Private
+                              </span>
+                            )}
                           </div>
                           {user &&
                             userProfile &&

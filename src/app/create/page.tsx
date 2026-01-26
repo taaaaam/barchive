@@ -14,6 +14,7 @@ export default function CreatePost() {
   const [content, setContent] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [featuredImage, setFeaturedImage] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState<User | null>(null);
@@ -53,6 +54,7 @@ export default function CreatePost() {
         featuredImage: featuredImage || null,
         authorId: user?.uid,
         authorName: userProfile?.username || user?.email,
+        private: isPrivate,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -170,6 +172,23 @@ export default function CreatePost() {
                   placeholder="Write your post content here..."
                   className="w-full"
                 />
+              </div>
+
+              {/* Private Post Checkbox */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border-2 border-green/20">
+                <input
+                  type="checkbox"
+                  id="private"
+                  checked={isPrivate}
+                  onChange={(e) => setIsPrivate(e.target.checked)}
+                  className="w-5 h-5 text-green border-green/30 rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
+                />
+                <label
+                  htmlFor="private"
+                  className="text-sm font-medium text-gray-dark cursor-pointer flex-1"
+                >
+                  Make this post private (only you will be able to see it)
+                </label>
               </div>
 
               {/* Error Message */}

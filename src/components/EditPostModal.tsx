@@ -18,6 +18,7 @@ export default function EditPostModal({
   const [content, setContent] = useState(post.content || "");
   const [excerpt, setExcerpt] = useState(post.excerpt || "");
   const [featuredImage, setFeaturedImage] = useState(post.featuredImage || "");
+  const [isPrivate, setIsPrivate] = useState(post.private || false);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -38,6 +39,7 @@ export default function EditPostModal({
         content: content.trim(),
         excerpt: excerpt.trim(),
         featuredImage: featuredImage,
+        private: isPrivate,
       };
       await onSave(updatedPost);
     } catch (error) {
@@ -177,6 +179,23 @@ export default function EditPostModal({
                   onImageRemove={() => {}}
                 />
               )}
+            </div>
+
+            {/* Private Post Checkbox */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border-2 border-green/20">
+              <input
+                type="checkbox"
+                id="private"
+                checked={isPrivate}
+                onChange={(e) => setIsPrivate(e.target.checked)}
+                className="w-5 h-5 text-green border-green/30 rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
+              />
+              <label
+                htmlFor="private"
+                className="text-sm font-medium text-gray-dark cursor-pointer flex-1"
+              >
+                Make this post private (only you will be able to see it)
+              </label>
             </div>
           </div>
 
