@@ -15,13 +15,21 @@ import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
+import LocationPicker from "@/components/LocationPicker";
+import MapLink from "@/components/MapLink";
+
+interface Location {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
 
 interface UserProfile {
   id: string;
   username: string;
   bio?: string;
   hometown?: string;
-  currentLocation?: string;
+  currentLocation?: string | Location;
   profilePicture?: string;
   classYear: string;
   email: string;
@@ -72,12 +80,35 @@ export default function ProfilePage() {
           console.error("Error finding member document:", error);
         }
 
+        // Handle currentLocation - could be string or Location object
+        let currentLocation: string | Location | undefined = undefined;
+        if (profileData.currentLocation) {
+          if (
+            typeof profileData.currentLocation === "object" &&
+            profileData.currentLocation.lat &&
+            profileData.currentLocation.lng
+          ) {
+            // It's already a Location object
+            currentLocation = {
+              displayName:
+                profileData.currentLocation.displayName ||
+                profileData.currentLocation.display_name ||
+                "Unknown Location",
+              lat: profileData.currentLocation.lat,
+              lng: profileData.currentLocation.lng,
+            };
+          } else if (typeof profileData.currentLocation === "string") {
+            // It's a string (backwards compatibility)
+            currentLocation = profileData.currentLocation;
+          }
+        }
+
         const profile: UserProfile = {
           id: userDoc.id,
           username: profileData.username || "",
           bio: profileData.bio || "",
           hometown: profileData.hometown || "",
-          currentLocation: profileData.currentLocation || "",
+          currentLocation: currentLocation,
           profilePicture: profileData.profilePicture || "",
           classYear: profileData.classYear || "",
           email: profileData.email || "",
@@ -98,12 +129,19 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
+      // Prepare location data for Firestore
+      // If it's a Location object, store it as an object; if it's a string, keep it as string
+      const locationToSave =
+        typeof editedProfile.currentLocation === "object" && editedProfile.currentLocation !== null
+          ? editedProfile.currentLocation
+          : editedProfile.currentLocation || null;
+
       // Update user profile
       await updateDoc(doc(db, "users", user.uid), {
         username: editedProfile.username,
         bio: editedProfile.bio,
         hometown: editedProfile.hometown,
-        currentLocation: editedProfile.currentLocation,
+        currentLocation: locationToSave,
         profilePicture: editedProfile.profilePicture,
       });
 
@@ -113,7 +151,7 @@ export default function ProfilePage() {
           username: editedProfile.username,
           bio: editedProfile.bio,
           hometown: editedProfile.hometown,
-          currentLocation: editedProfile.currentLocation,
+          currentLocation: locationToSave,
           profilePicture: editedProfile.profilePicture,
         });
       }
@@ -219,6 +257,7 @@ export default function ProfilePage() {
               >
                 Delegations
               </Link>
+              <MapLink />
               <Link
                 href="/newsletters"
                 className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
@@ -400,18 +439,24 @@ export default function ProfilePage() {
                       </svg>
                       <span className="text-lg text-gray-dark font-medium">
                         {editMode ? (
-                          <input
-                            type="text"
-                            value={editedProfile?.currentLocation || ""}
-                            onChange={(e) =>
-                              setEditedProfile({
-                                ...editedProfile!,
-                                currentLocation: e.target.value,
-                              })
-                            }
-                            placeholder="Current Location"
-                            className="px-3 py-1 border border-green/30 rounded focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark"
-                          />
+                          <div className="w-full max-w-md">
+                            <LocationPicker
+                              value={
+                                typeof editedProfile?.currentLocation === "object"
+                                  ? editedProfile.currentLocation
+                                  : editedProfile?.currentLocation || null
+                              }
+                              onChange={(location) =>
+                                setEditedProfile({
+                                  ...editedProfile!,
+                                  currentLocation: location || "",
+                                })
+                              }
+                              placeholder="Search for your location..."
+                            />
+                          </div>
+                        ) : typeof userProfile.currentLocation === "object" ? (
+                          userProfile.currentLocation.displayName
                         ) : (
                           userProfile.currentLocation
                         )}

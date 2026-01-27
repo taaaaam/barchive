@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import EditPostModal from "@/components/EditPostModal";
+import MapLink from "@/components/MapLink";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -320,6 +321,7 @@ export default function Home() {
                   >
                     Delegations
                   </Link>
+                  <MapLink />
                 </nav>
               )}
             </div>
@@ -404,6 +406,7 @@ export default function Home() {
                 >
                   Delegations
                 </Link>
+                <MapLink />
                 <Link
                   href="/newsletters"
                   className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"

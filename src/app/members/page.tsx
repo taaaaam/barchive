@@ -8,6 +8,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import MapLink from "@/components/MapLink";
 
 interface Member {
   id: string;
@@ -193,6 +194,7 @@ export default function MembersPage() {
               >
                 Memories
               </Link>
+              <MapLink />
               <Link
                 href="/newsletters"
                 className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"

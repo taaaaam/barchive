@@ -17,6 +17,7 @@ import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import MapLink from "@/components/MapLink";
 import { getDoc } from "firebase/firestore";
 
 interface Memory {
@@ -284,6 +285,7 @@ export default function MemoriesPage() {
               >
                 Delegations
               </Link>
+              <MapLink />
               <Link
                 href="/newsletters"
                 className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"

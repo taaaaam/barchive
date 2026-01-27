@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import ProfileDropdown from "@/components/ProfileDropdown";
+import MapLink from "@/components/MapLink";
 import { uploadPDF, extractPublicId, deleteCloudinaryImage } from "@/lib/cloudinary";
 
 interface Newsletter {
@@ -277,6 +278,7 @@ export default function NewslettersPage() {
               >
                 Delegations
               </Link>
+              <MapLink />
               {userProfile && (
                 <ProfileDropdown
                   username={userProfile.username}
