@@ -10,6 +10,12 @@ import { doc, getDoc } from "firebase/firestore";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import MapLink from "@/components/MapLink";
 
+interface Location {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
 interface Member {
   id: string;
   firstName: string;
@@ -21,7 +27,7 @@ interface Member {
   username?: string;
   profilePicture?: string;
   hometown?: string;
-  currentLocation?: string;
+  currentLocation?: string | Location;
   bio?: string;
 }
 
@@ -64,8 +70,35 @@ export default function MembersPage() {
       const snapshot = await getDocs(membersQuery);
 
       const membersData: Member[] = [];
+      const claimedUserIds = new Set<string>();
 
-      // Fetch each member and their profile data if claimed
+      // First pass: collect all claimed user IDs
+      for (const memberDoc of snapshot.docs) {
+        const memberData = memberDoc.data();
+        if (memberData.isClaimed && memberData.claimedBy) {
+          claimedUserIds.add(memberData.claimedBy);
+        }
+      }
+
+      // Fetch all user profiles in parallel
+      const userProfilePromises = Array.from(claimedUserIds).map((userId) =>
+        getDoc(doc(db, "users", userId))
+          .then((userDoc) => ({
+            userId,
+            userData: userDoc.exists() ? userDoc.data() : null,
+          }))
+          .catch((error) => {
+            console.error(`Error fetching user profile for ${userId}:`, error);
+            return { userId, userData: null };
+          })
+      );
+
+      const userProfiles = await Promise.all(userProfilePromises);
+      const userProfileMap = new Map(
+        userProfiles.map(({ userId, userData }) => [userId, userData])
+      );
+
+      // Second pass: build members data with user profiles
       for (const memberDoc of snapshot.docs) {
         const memberData = memberDoc.data();
         let profilePicture = memberData.profilePicture;
@@ -75,24 +108,17 @@ export default function MembersPage() {
         let currentLocation = memberData.currentLocation;
         let email = memberData.email;
 
-        // If member is claimed, try to get profile data from users collection
+        // If member is claimed, get profile data from the map
         if (memberData.isClaimed && memberData.claimedBy) {
-          try {
-            const userDoc = await getDoc(
-              doc(db, "users", memberData.claimedBy)
-            );
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              // Use user data if member data is missing
-              profilePicture = profilePicture || userData.profilePicture;
-              bio = bio || userData.bio;
-              username = username || userData.username;
-              hometown = hometown || userData.hometown;
-              currentLocation = currentLocation || userData.currentLocation;
-              email = email || userData.email;
-            }
-          } catch (error) {
-            console.error("Error fetching user profile for member:", error);
+          const userData = userProfileMap.get(memberData.claimedBy);
+          if (userData) {
+            // Use user data if member data is missing
+            profilePicture = profilePicture || userData.profilePicture;
+            bio = bio || userData.bio;
+            username = username || userData.username;
+            hometown = hometown || userData.hometown;
+            currentLocation = currentLocation || userData.currentLocation;
+            email = email || userData.email;
           }
         }
 
@@ -346,7 +372,9 @@ export default function MembersPage() {
                                   />
                                 </svg>
                                 <span className="text-xs text-gray-medium">
-                                  {member.currentLocation}
+                                  {typeof member.currentLocation === "object" && member.currentLocation !== null
+                                    ? member.currentLocation.displayName || "Unknown Location"
+                                    : member.currentLocation}
                                 </span>
                               </div>
                             )}

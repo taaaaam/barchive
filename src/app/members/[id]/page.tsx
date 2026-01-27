@@ -8,6 +8,12 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ProfileDropdown from "@/components/ProfileDropdown";
 
+interface Location {
+  displayName: string;
+  lat: number;
+  lng: number;
+}
+
 interface Member {
   id: string;
   firstName: string;
@@ -19,7 +25,7 @@ interface Member {
   username?: string;
   profilePicture?: string;
   hometown?: string;
-  currentLocation?: string;
+  currentLocation?: string | Location;
   bio?: string;
 }
 
@@ -351,7 +357,9 @@ export default function MemberPage({
                         />
                       </svg>
                       <span className="text-lg text-gray-dark font-medium">
-                        {member.currentLocation}
+                        {typeof member.currentLocation === "object" && member.currentLocation !== null
+                          ? member.currentLocation.displayName || "Unknown Location"
+                          : member.currentLocation}
                       </span>
                     </div>
                   )}
