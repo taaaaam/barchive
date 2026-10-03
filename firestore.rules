@@ -1,0 +1,173 @@
+rules_version = '2';
+
+// Security rules for The BaRchive.
+// Deploy with: firebase deploy --only firestore:rules
+// Rules are not filters: list queries must only touch documents the rules allow.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Admins: isAdmin on their user doc, or the site's admin email (see ADMIN_EMAIL in src/lib/firebase.ts)
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email == "tamvu2104@gmail.com" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("isAdmin", false) == true
+      );
+    }
+
+    function changedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    function isValidYear(year) {
+      return year is string && year.matches("^20[0-9]{2}$");
+    }
+
+    function isShortText(value, max) {
+      return value is string && value.size() > 0 && value.size() <= max;
+    }
+
+    // ---------- classes ----------
+    // Public read: the login page lists class years before anyone is signed in.
+    match /classes/{classId} {
+      allow read: if true;
+
+      // "Add new class" on the login page (signed out) or admin dashboard: the doc ID
+      // must be the year, so the same year can't be created twice.
+      allow create: if classId == request.resource.data.year
+        && isValidYear(request.resource.data.year)
+        && request.resource.data.keys().hasOnly(["year", "createdAt"]);
+
+      // Members can set a class group photo; nothing else.
+      allow update: if isAdmin()
+        || (signedIn() && changedOnly(["groupPhoto", "groupPhotoUpdatedAt"]));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------- members (the roster) ----------
+    // Public read: the login flow lists a class's members (and uses a claimed
+    // member's email to sign in) before anyone is signed in.
+    match /members/{memberId} {
+      allow read: if true;
+
+      // "Add new member" on the login page (signed out) or admin dashboard:
+      // only a plain, unclaimed roster entry.
+      allow create: if request.resource.data.keys().hasOnly(["firstName", "lastName", "classYear", "isClaimed", "createdAt"])
+        && isShortText(request.resource.data.firstName, 60)
+        && isShortText(request.resource.data.lastName, 60)
+        && isValidYear(request.resource.data.classYear)
+        && request.resource.data.isClaimed == false;
+
+      allow update: if isAdmin()
+        // Claiming an unclaimed member right after signing up, for yourself only
+        || (signedIn()
+            && resource.data.isClaimed == false
+            && request.resource.data.isClaimed == true
+            && request.resource.data.claimedBy == request.auth.uid
+            && changedOnly(["isClaimed", "claimedBy", "username", "email", "claimedAt"]))
+        // Editing the profile fields of the member you claimed
+        || (signedIn()
+            && resource.data.get("claimedBy", null) == request.auth.uid
+            && changedOnly(["username", "bio", "hometown", "currentLocation", "profilePicture"]));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------- users (one per signed-in account) ----------
+    match /users/{uid} {
+      allow read: if signedIn();
+
+      // Created at sign-up for yourself; can never grant admin.
+      allow create: if isSelf(uid)
+        && request.resource.data.get("isAdmin", false) == false;
+
+      // Edit your own profile, but not your admin flag or linked member.
+      allow update: if isAdmin()
+        || (isSelf(uid)
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(["isAdmin", "memberId"]));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------- posts (The Chronicles) ----------
+    match /posts/{postId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid;
+
+      // Authors edit/archive their own posts (and can't hand them to someone else).
+      allow update: if isAdmin()
+        || (signedIn()
+            && resource.data.authorId == request.auth.uid
+            && request.resource.data.authorId == request.auth.uid);
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.authorId == request.auth.uid);
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.authorId == request.auth.uid
+          && isShortText(request.resource.data.content, 5000);
+        allow update: if signedIn()
+          && resource.data.authorId == request.auth.uid
+          && changedOnly(["content", "updatedAt"]);
+        allow delete: if isAdmin()
+          || (signedIn() && resource.data.authorId == request.auth.uid);
+      }
+
+      // Cheers
+      match /likes/{likeId} {
+        allow read: if signedIn();
+        allow create: if signedIn()
+          && request.resource.data.userId == request.auth.uid;
+        allow delete: if isAdmin()
+          || (signedIn() && resource.data.userId == request.auth.uid);
+      }
+    }
+
+    // ---------- memories (shared photo albums) ----------
+    match /memories/{memoryId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid;
+
+      allow update: if isAdmin()
+        // The author can edit anything except authorship
+        || (signedIn()
+            && resource.data.authorId == request.auth.uid
+            && request.resource.data.authorId == request.auth.uid)
+        // Any member can add photos to an album, but not remove any
+        || (signedIn()
+            && changedOnly(["photos", "updatedAt"])
+            && request.resource.data.photos.hasAll(resource.data.photos));
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.authorId == request.auth.uid);
+    }
+
+    // ---------- newsletters ----------
+    match /newsletters/{newsletterId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.authorId == request.auth.uid);
+    }
+
+    // Anything not listed above is locked.
+  }
+}

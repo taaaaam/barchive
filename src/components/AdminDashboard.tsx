@@ -6,6 +6,7 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  setDoc,
   query,
   orderBy,
 } from "firebase/firestore";
@@ -253,8 +254,8 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (newClassYear && !classYears.includes(newClassYear)) {
       try {
-        // Save new class to Firebase
-        await addDoc(collection(db, "classes"), {
+        // Save new class to Firebase, using the year as the doc ID (no duplicates)
+        await setDoc(doc(db, "classes", newClassYear), {
           year: newClassYear,
           createdAt: new Date(),
         });
