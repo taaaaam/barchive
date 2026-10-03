@@ -37,12 +37,11 @@ export default function SetupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center p-4">
-      <div className="max-w-2xl mx-auto p-10 bg-white rounded-2xl shadow-2xl border-2 border-green/20 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+    <div className="min-h-screen bg-green flex items-center justify-center p-4">
+      <div className="max-w-2xl mx-auto p-10 bg-white rounded-2xl shadow-2xl relative">
         <div className="relative">
           <div className="text-center mb-8">
-            <div className="inline-block p-4 bg-green/5 rounded-full border-2 border-green/30 mb-6">
+            <div className="inline-block p-4 bg-green/5 rounded-full mb-6">
               <svg
                 className="w-10 h-10 text-green"
                 fill="currentColor"
@@ -60,7 +59,7 @@ export default function SetupPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="p-6 bg-gray-light rounded-lg border-2 border-green/20">
+            <div className="p-6 bg-gray-light rounded-lg">
               <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
                 Create Admin Account
               </h3>
@@ -77,7 +76,7 @@ export default function SetupPage() {
               </button>
             </div>
 
-            <div className="p-6 bg-gray-light rounded-lg border-2 border-green/20">
+            <div className="p-6 bg-gray-light rounded-lg">
               <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
                 Create Sample Members
               </h3>
@@ -95,10 +94,10 @@ export default function SetupPage() {
 
             {message && (
               <div
-                className={`p-4 rounded-lg border-2 ${
+                className={`p-4 rounded-lg ${
                   message.includes("Error")
-                    ? "bg-red-50 border-red-200 text-red-800"
-                    : "bg-green-50 border-green-200 text-green-800"
+                    ? "bg-red-50 text-red-800"
+                    : "bg-green-50 text-green-800"
                 }`}
               >
                 <p className="font-medium">{message}</p>

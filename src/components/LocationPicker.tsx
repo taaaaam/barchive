@@ -127,7 +127,7 @@ export default function LocationPicker({
             }
           }}
           placeholder={placeholder}
-          className="w-full px-3 py-1 border border-green/30 rounded focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark"
+          className="border border-gray-300 focus:border-green w-full px-3 py-1 rounded focus:ring-2 focus:ring-green bg-white text-gray-dark"
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -158,12 +158,12 @@ export default function LocationPicker({
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={index}
               onClick={() => handleSelectSuggestion(suggestion)}
-              className="w-full text-left px-4 py-2 hover:bg-green/10 transition-colors border-b border-gray-100 last:border-b-0"
+              className="w-full text-left px-4 py-2 hover:bg-green/10 transition-colors"
               type="button"
             >
               <div className="font-medium text-gray-900">
@@ -178,7 +178,7 @@ export default function LocationPicker({
       )}
 
       {showSuggestions && suggestions.length === 0 && searchTerm.length >= 3 && !isLoading && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500">
+        <div className="absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg p-4 text-center text-gray-500">
           No locations found
         </div>
       )}

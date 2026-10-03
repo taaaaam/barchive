@@ -16,7 +16,6 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import ProfileImageUpload from "@/components/ProfileImageUpload";
 import LocationPicker from "@/components/LocationPicker";
-import MapLink from "@/components/MapLink";
 
 interface Location {
   displayName: string;
@@ -185,11 +184,11 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-medium">Loading profile...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+            <p className="text-white/75">Loading profile...</p>
           </div>
         </div>
       </div>
@@ -198,15 +197,15 @@ export default function ProfilePage() {
 
   if (!userProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <h1 className="text-3xl font-serif font-bold text-gray-dark mb-4">
+            <h1 className="text-3xl font-serif font-bold text-white mb-4">
               Profile Not Found
             </h1>
             <Link
               href="/"
-              className="inline-flex items-center px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300"
+              className="inline-flex items-center px-6 py-3 bg-white text-green hover:bg-gray-light font-semibold rounded-lg transition-all duration-300"
             >
               Back to Home
             </Link>
@@ -217,10 +216,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
+      <header className="page-header-enter bg-green relative">
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -244,27 +242,6 @@ export default function ProfilePage() {
                 Back to Home
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/memories"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Memories
-              </Link>
-              <Link
-                href="/members"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Delegations
-              </Link>
-              <MapLink />
-              <Link
-                href="/newsletters"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Newsletters
-              </Link>
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
@@ -278,8 +255,8 @@ export default function ProfilePage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 overflow-hidden">
+      <main className="page-main-enter max-w-4xl mx-auto px-8 py-12">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="p-8">
             {/* Profile Header */}
             <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8 mb-8">
@@ -292,7 +269,7 @@ export default function ProfilePage() {
                     currentImage={editedProfile?.profilePicture}
                   />
                 ) : (
-                  <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-green/20">
+                  <div className="relative w-48 h-48 rounded-full overflow-hidden">
                     {userProfile.profilePicture ? (
                       <Image
                         src={userProfile.profilePicture}
@@ -334,7 +311,7 @@ export default function ProfilePage() {
                           username: e.target.value,
                         })
                       }
-                      className="w-full px-4 py-2 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-serif font-bold text-3xl"
+                      className="border border-gray-300 focus:border-green w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-serif font-bold text-3xl"
                     />
                   ) : (
                     userProfile.username
@@ -407,7 +384,7 @@ export default function ProfilePage() {
                               })
                             }
                             placeholder="Hometown"
-                            className="px-3 py-1 border border-green/30 rounded focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark"
+                            className="border border-gray-300 focus:border-green px-3 py-1 rounded focus:ring-2 focus:ring-green bg-white text-gray-dark"
                           />
                         ) : (
                           userProfile.hometown
@@ -482,7 +459,7 @@ export default function ProfilePage() {
                     })
                   }
                   placeholder="Tell us about yourself..."
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                   rows={4}
                 />
               ) : (

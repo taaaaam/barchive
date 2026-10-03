@@ -97,7 +97,7 @@ export default function EditPostModal({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                 placeholder="Enter post title"
                 maxLength={100}
               />
@@ -128,7 +128,7 @@ export default function EditPostModal({
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                 placeholder="Enter a brief description of your post"
                 maxLength={300}
               />
@@ -148,7 +148,7 @@ export default function EditPostModal({
                     <img
                       src={featuredImage}
                       alt="Featured image"
-                      className="w-full h-48 object-cover rounded-lg border-2 border-green/20"
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                     <button
                       onClick={handleRemoveImage}
@@ -182,13 +182,13 @@ export default function EditPostModal({
             </div>
 
             {/* Private Post Checkbox */}
-            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border-2 border-green/20">
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
               <input
                 type="checkbox"
                 id="private"
                 checked={isPrivate}
                 onChange={(e) => setIsPrivate(e.target.checked)}
-                className="w-5 h-5 text-green border-green/30 rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
+                className="border border-gray-300 focus:border-green w-5 h-5 text-green rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
               />
               <label
                 htmlFor="private"
@@ -200,7 +200,7 @@ export default function EditPostModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-green/20">
+          <div className="flex items-center justify-end gap-4 mt-8 pt-6">
             <button
               onClick={onClose}
               className="px-6 py-3 text-gray-600 hover:text-gray-800 font-semibold transition-colors"

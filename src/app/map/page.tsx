@@ -3,11 +3,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
 
 // Dynamically import MapContainer to avoid SSR issues with Leaflet
 const MapContainer = dynamic(
@@ -52,22 +51,13 @@ export default function MapPage() {
   const [userLocations, setUserLocations] = useState<UserLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [showContent, setShowContent] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data());
-        }
-      } else {
-        setUserProfile(null);
-        router.push("/login");
-      }
+      if (!user) router.push("/login");
     });
 
     return () => unsubscribe();
@@ -183,24 +173,23 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+      <div className="min-h-screen bg-green flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-medium">Loading map...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-white/75">Loading map...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
       <header
-        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+        className={`page-header-enter bg-green relative transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -224,33 +213,6 @@ export default function MapPage() {
                 Back to Home
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/memories"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Memories
-              </Link>
-              <Link
-                href="/members"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Delegations
-              </Link>
-              <Link
-                href="/newsletters"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Newsletters
-              </Link>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
-                />
-              )}
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
@@ -268,11 +230,11 @@ export default function MapPage() {
 
       {/* Main Content */}
       <main
-        className={`max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
+        className={`page-main-enter max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div style={{ height: "600px", width: "100%" }}>
             {typeof window !== "undefined" && (
               <MapContainer
@@ -348,12 +310,12 @@ export default function MapPage() {
 
         {userLocations.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-medium text-lg">
+            <p className="text-white/75 text-lg">
               No members have set their locations yet.
             </p>
             <Link
               href="/profile"
-              className="inline-block mt-4 px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300"
+              className="inline-block mt-4 px-6 py-3 bg-white text-green hover:bg-gray-light font-semibold rounded-lg transition-all duration-300"
             >
               Set Your Location
             </Link>

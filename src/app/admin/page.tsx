@@ -1,11 +1,11 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth, ADMIN_EMAIL } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import AdminDashboard from "@/components/AdminDashboard";
-import ProfileDropdown from "@/components/ProfileDropdown";
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -84,34 +84,33 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent"></div>
+      <div className="min-h-screen bg-green flex items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent"></div>
       </div>
     );
   }
 
   if (!user || !userProfile || !userProfile.isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+      <div className="min-h-screen bg-green flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-dark mb-4">
+          <h1 className="text-2xl font-bold text-white mb-4">
             Access Denied
           </h1>
-          <p className="text-gray-medium">You don't have admin privileges.</p>
+          <p className="text-white/75">You don't have admin privileges.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
+      <header className="page-header-enter bg-green relative">
         <div className="relative max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/10 rounded-full border-2 border-white/20">
+              <div className="p-3 bg-white/10 rounded-full">
                 <svg
                   className="w-8 h-8 text-white"
                   fill="currentColor"
@@ -126,45 +125,34 @@ export default function AdminPage() {
                 </h1>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push("/")}
-                className="px-4 py-2 text-white hover:text-gray-light font-medium transition-colors duration-300"
+            <Link
+              href="/"
+              className="inline-flex items-center text-white hover:text-gray-light font-serif font-semibold text-lg transition-all duration-300 group"
+            >
+              <svg
+                className="mr-3 w-6 h-6 transition-transform group-hover:-translate-x-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                View Blog
-              </button>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
                 />
-              )}
-            </div>
+              </svg>
+              Back to Home
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-12">
+      <main className="page-main-enter max-w-7xl mx-auto px-8 py-12">
         <AdminDashboard />
       </main>
 
-      {/* Footer */}
-      <footer className="bg-green text-white py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="text-center">
-            <h3 className="text-3xl font-serif font-bold mb-6">The BaRchive</h3>
-            <p className="text-white/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
-              Preserving the wisdom of Yale's coolest society
-            </p>
-            <p className="text-white/60 font-serif">
-              &copy; 2025 BaR. Est. 2011. Built with Next.js, Tailwind CSS &
-              Firebase.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

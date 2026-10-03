@@ -294,10 +294,9 @@ export default function MemberSelection({
   // Remove the full-screen loading state - show the UI immediately
 
   return (
-    <div className="max-w-4xl mx-auto p-10 bg-white rounded-2xl shadow-2xl border-2 border-green/20 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+    <div className="member-card-enter max-w-4xl mx-auto p-10 bg-white rounded-2xl shadow-2xl relative">
       <div className="relative">
-        <div className="text-center mb-8">
+        <div className="member-heading-enter text-center mb-8">
           <button
             onClick={onBack}
             className="inline-flex items-center text-gray-medium hover:text-green font-medium transition-colors duration-300 mb-4"
@@ -351,7 +350,7 @@ export default function MemberSelection({
 
         {/* Add Member Form */}
         {showAddMemberForm && (
-          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl border-2 border-green/20">
+          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               Add New Member
             </h3>
@@ -368,7 +367,7 @@ export default function MemberSelection({
                       setNewMember({ ...newMember, firstName: e.target.value })
                     }
                     required
-                    className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                    className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                     placeholder="Enter first name"
                   />
                 </div>
@@ -383,7 +382,7 @@ export default function MemberSelection({
                       setNewMember({ ...newMember, lastName: e.target.value })
                     }
                     required
-                    className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                    className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                     placeholder="Enter last name"
                   />
                 </div>
@@ -397,7 +396,7 @@ export default function MemberSelection({
                   value={newMemberKeyword}
                   onChange={(e) => setNewMemberKeyword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                   placeholder="Enter the sacred phrase that binds us together"
                 />
                 <p className="text-sm text-gray-medium mt-2">
@@ -406,7 +405,7 @@ export default function MemberSelection({
               </div>
 
               {error && (
-                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                <div className="bg-red-50 rounded-lg p-4">
                   <p className="text-red-800 text-sm font-medium">{error}</p>
                 </div>
               )}
@@ -439,16 +438,17 @@ export default function MemberSelection({
           </div>
         ) : members.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {members.map((member) => (
+            {members.map((member, i) => (
               <button
                 key={member.id}
                 onClick={() => handleMemberSelection(member)}
-                className={`p-4 rounded-lg border-2 transition-all duration-300 text-left ${
+                style={{ animationDelay: `${150 + i * 35}ms` }}
+                className={`member-row-enter p-4 rounded-lg transition-all duration-300 text-left ${
                   selectedMember?.id === member.id
-                    ? "border-green bg-green/10"
+                    ? "bg-green/10"
                     : member.isClaimed
-                    ? "border-gray-300 bg-gray-50 hover:border-green/30"
-                    : "border-green/30 bg-green/5 hover:border-green"
+                    ? "bg-gray-50"
+                    : "bg-green/5"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -477,7 +477,7 @@ export default function MemberSelection({
           </div>
         ) : (
           <div className="text-center py-12">
-            <div className="inline-block p-6 bg-green/5 rounded-full border-2 border-green/20 mb-6">
+            <div className="inline-block p-6 bg-green/5 rounded-full mb-6">
               <svg
                 className="w-16 h-16 text-green"
                 fill="none"
@@ -503,7 +503,7 @@ export default function MemberSelection({
         )}
 
         {selectedMember && (
-          <div ref={claimAccountRef} className="border-t border-gray-200 pt-8">
+          <div ref={claimAccountRef} className="pt-8">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               {selectedMember.isClaimed ? "Log In" : "Claim Account"}
             </h3>
@@ -523,7 +523,7 @@ export default function MemberSelection({
             </div>
 
             {!selectedMember.isClaimed && showKeywordVerification && (
-              <div className="mb-6 p-6 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+              <div className="mb-6 p-6 bg-yellow-50 rounded-lg">
                 <h4 className="text-lg font-serif font-bold text-gray-dark mb-3">
                   Society Verification
                 </h4>
@@ -545,13 +545,13 @@ export default function MemberSelection({
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 bg-white text-gray-dark placeholder-gray-medium font-medium"
+                      className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-yellow-500 bg-white text-gray-dark placeholder-gray-medium font-medium"
                       placeholder="Enter the three words that define us"
                     />
                   </div>
 
                   {error && (
-                    <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                    <div className="bg-red-50 rounded-lg p-4">
                       <p className="text-red-800 text-sm font-medium">
                         {error}
                       </p>
@@ -611,7 +611,7 @@ export default function MemberSelection({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required={!selectedMember.isClaimed}
-                        className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                        className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                         placeholder="Enter your email address"
                       />
                     </div>
@@ -624,7 +624,7 @@ export default function MemberSelection({
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required={!selectedMember.isClaimed}
-                        className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                        className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                         placeholder="Enter your username"
                       />
                     </div>
@@ -640,7 +640,7 @@ export default function MemberSelection({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                    className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                     placeholder="Enter your password"
                   />
                 </div>
@@ -655,14 +655,14 @@ export default function MemberSelection({
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required={!selectedMember.isClaimed}
-                      className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                      className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                       placeholder="Confirm your password"
                     />
                   </div>
                 )}
 
                 {error && (
-                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                  <div className="bg-red-50 rounded-lg p-4">
                     <p className="text-red-800 text-sm font-medium">{error}</p>
                   </div>
                 )}

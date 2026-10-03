@@ -2,10 +2,38 @@
 import { useState, useRef, useCallback } from "react";
 import { processImageFile, validateImageFile } from "@/lib/imageUtils";
 
+// How many images upload to Cloudinary at the same time
+const UPLOAD_CONCURRENCY = 4;
+
+async function uploadSingleImage(file: File): Promise<string> {
+  // Process image file (convert HEIC to JPEG if needed)
+  const processedFile = await processImageFile(file);
+
+  const formData = new FormData();
+  formData.append("file", processedFile);
+  formData.append("upload_preset", "baR_blog");
+  formData.append("folder", "baR-blog");
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Upload failed");
+  }
+
+  const data = await response.json();
+  return data.secure_url;
+}
+
 interface MultiImageUploadProps {
   onImagesUpload: (imageUrls: string[]) => void;
   disabled?: boolean;
-  maxImages?: number;
+  maxImages?: number; // optional cap on how many images can be added; unlimited by default
   stagingMode?: boolean; // New prop to enable staging mode
 }
 
@@ -26,7 +54,7 @@ interface StagedFile {
 export default function MultiImageUpload({
   onImagesUpload,
   disabled = false,
-  maxImages = 20,
+  maxImages,
   stagingMode = false,
 }: MultiImageUploadProps) {
   const [uploading, setUploading] = useState(false);
@@ -64,7 +92,7 @@ export default function MultiImageUpload({
         return;
       }
 
-      if (stagedFiles.length + fileArray.length > maxImages) {
+      if (maxImages && stagedFiles.length + fileArray.length > maxImages) {
         setError(`Maximum ${maxImages} images allowed`);
         return;
       }
@@ -102,30 +130,46 @@ export default function MultiImageUpload({
     setStagedFiles([]);
   };
 
-  const uploadSingleImage = async (file: File): Promise<string> => {
-    // Process image file (convert HEIC to JPEG if needed)
-    const processedFile = await processImageFile(file);
+  // Upload files a few at a time, updating each file's progress entry as it
+  // finishes. Returns the URLs of the successful uploads (in selection order)
+  // and the indexes of any that failed.
+  const uploadAll = useCallback(async (files: File[]) => {
+    setUploadProgress(
+      files.map((file) => ({ file, progress: 0, status: "uploading" }))
+    );
+    const urls: (string | null)[] = new Array(files.length).fill(null);
+    let next = 0;
 
-    const formData = new FormData();
-    formData.append("file", processedFile);
-    formData.append("upload_preset", "baR_blog");
-    formData.append("folder", "baR-blog");
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
+    const worker = async () => {
+      while (next < files.length) {
+        const i = next++;
+        try {
+          const url = await uploadSingleImage(files[i]);
+          urls[i] = url;
+          setUploadProgress((prev) =>
+            prev.map((p, j) =>
+              j === i ? { ...p, progress: 100, status: "completed", url } : p
+            )
+          );
+        } catch (error) {
+          console.error(`Upload error for ${files[i].name}:`, error);
+          setUploadProgress((prev) =>
+            prev.map((p, j) =>
+              j === i ? { ...p, status: "error", error: "Upload failed" } : p
+            )
+          );
+        }
       }
+    };
+    await Promise.all(
+      Array.from({ length: Math.min(UPLOAD_CONCURRENCY, files.length) }, worker)
     );
 
-    if (!response.ok) {
-      throw new Error("Upload failed");
-    }
-
-    const data = await response.json();
-    return data.secure_url;
-  };
+    return {
+      uploadedUrls: urls.filter((url): url is string => url !== null),
+      failedIndexes: urls.flatMap((url, i) => (url === null ? [i] : [])),
+    };
+  }, []);
 
   const handleFiles = useCallback(
     async (files: FileList) => {
@@ -152,7 +196,7 @@ export default function MultiImageUpload({
         return;
       }
 
-      if (fileArray.length > maxImages) {
+      if (maxImages && fileArray.length > maxImages) {
         setError(`Maximum ${maxImages} images allowed`);
         return;
       }
@@ -160,57 +204,7 @@ export default function MultiImageUpload({
       setError("");
       setUploading(true);
 
-      // Initialize progress tracking
-      const initialProgress: UploadProgress[] = fileArray.map((file) => ({
-        file,
-        progress: 0,
-        status: "uploading",
-      }));
-      setUploadProgress(initialProgress);
-
-      const uploadedUrls: string[] = [];
-      const completedProgress: UploadProgress[] = [];
-
-      // Upload files sequentially to avoid overwhelming the server
-      for (let i = 0; i < fileArray.length; i++) {
-        const file = fileArray[i];
-        try {
-          const url = await uploadSingleImage(file);
-          uploadedUrls.push(url);
-
-          // Update progress for this file
-          const updatedProgress = [...completedProgress];
-          updatedProgress.push({
-            file,
-            progress: 100,
-            status: "completed",
-            url,
-          });
-          setUploadProgress(updatedProgress);
-          completedProgress.push({
-            file,
-            progress: 100,
-            status: "completed",
-            url,
-          });
-        } catch (error) {
-          console.error(`Upload error for ${file.name}:`, error);
-          const updatedProgress = [...completedProgress];
-          updatedProgress.push({
-            file,
-            progress: 0,
-            status: "error",
-            error: "Upload failed",
-          });
-          setUploadProgress(updatedProgress);
-          completedProgress.push({
-            file,
-            progress: 0,
-            status: "error",
-            error: "Upload failed",
-          });
-        }
-      }
+      const { uploadedUrls } = await uploadAll(fileArray);
 
       if (uploadedUrls.length > 0) {
         onImagesUpload(uploadedUrls);
@@ -223,7 +217,7 @@ export default function MultiImageUpload({
         setUploadProgress([]);
       }, 3000);
     },
-    [maxImages, onImagesUpload, stagingMode, stageFiles]
+    [maxImages, onImagesUpload, stagingMode, stageFiles, uploadAll]
   );
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,62 +264,23 @@ export default function MultiImageUpload({
     setUploading(true);
     setError("");
 
-    // Initialize progress tracking
-    const initialProgress: UploadProgress[] = stagedFiles.map((stagedFile) => ({
-      file: stagedFile.file,
-      progress: 0,
-      status: "uploading",
-    }));
-    setUploadProgress(initialProgress);
-
-    const uploadedUrls: string[] = [];
-    const completedProgress: UploadProgress[] = [];
-
-    // Upload files sequentially to avoid overwhelming the server
-    for (let i = 0; i < stagedFiles.length; i++) {
-      const stagedFile = stagedFiles[i];
-      try {
-        const url = await uploadSingleImage(stagedFile.file);
-        uploadedUrls.push(url);
-
-        // Update progress for this file
-        const updatedProgress = [...completedProgress];
-        updatedProgress.push({
-          file: stagedFile.file,
-          progress: 100,
-          status: "completed",
-          url,
-        });
-        setUploadProgress(updatedProgress);
-        completedProgress.push({
-          file: stagedFile.file,
-          progress: 100,
-          status: "completed",
-          url,
-        });
-      } catch (error) {
-        console.error(`Upload error for ${stagedFile.file.name}:`, error);
-        const updatedProgress = [...completedProgress];
-        updatedProgress.push({
-          file: stagedFile.file,
-          progress: 0,
-          status: "error",
-          error: "Upload failed",
-        });
-        setUploadProgress(updatedProgress);
-        completedProgress.push({
-          file: stagedFile.file,
-          progress: 0,
-          status: "error",
-          error: "Upload failed",
-        });
-      }
-    }
+    const { uploadedUrls, failedIndexes } = await uploadAll(
+      stagedFiles.map((stagedFile) => stagedFile.file)
+    );
 
     if (uploadedUrls.length > 0) {
       onImagesUpload(uploadedUrls);
-      // Clear staged files after successful upload
-      clearStagedFiles();
+    }
+    // Unstage everything that uploaded; keep failures staged so they can be retried
+    const failedIds = new Set(failedIndexes.map((i) => stagedFiles[i].id));
+    stagedFiles
+      .filter((stagedFile) => !failedIds.has(stagedFile.id))
+      .forEach((stagedFile) => URL.revokeObjectURL(stagedFile.preview));
+    setStagedFiles((prev) => prev.filter((f) => failedIds.has(f.id)));
+    if (failedIndexes.length > 0) {
+      setError(
+        `${failedIndexes.length} image${failedIndexes.length !== 1 ? "s" : ""} failed to upload. They're still selected below; try uploading again.`
+      );
     }
 
     setUploading(false);
@@ -343,10 +298,10 @@ export default function MultiImageUpload({
       </label>
 
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 ${
+        className={`rounded-lg p-8 text-center transition-all duration-300 ${
           isDragOver
-            ? "border-green bg-green/5 scale-105"
-            : "border-green/30 hover:border-green/50"
+            ? "bg-green/5 scale-105"
+            : ""
         } ${
           disabled || uploading
             ? "opacity-50 cursor-not-allowed"
@@ -381,7 +336,8 @@ export default function MultiImageUpload({
               or click to select multiple images
             </p>
             <p className="text-xs text-gray-medium mt-1">
-              PNG, JPG, GIF, HEIC up to 5MB each • Max {maxImages} images
+              PNG, JPG, GIF, HEIC up to 8MB each
+              {maxImages ? ` • Max ${maxImages} images` : ""}
             </p>
           </div>
         </div>
@@ -415,7 +371,7 @@ export default function MultiImageUpload({
             {stagedFiles.map((stagedFile) => (
               <div
                 key={stagedFile.id}
-                className="relative group bg-white rounded-lg border border-green/20 overflow-hidden"
+                className="relative group bg-white rounded-lg overflow-hidden"
               >
                 <div className="aspect-square relative">
                   <img
@@ -506,7 +462,7 @@ export default function MultiImageUpload({
           {uploadProgress.map((progress, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg border border-green/20 p-3"
+              className="bg-white rounded-lg p-3"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-dark truncate">
@@ -535,7 +491,7 @@ export default function MultiImageUpload({
       )}
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 rounded-lg p-4">
           <p className="text-red-800 text-sm font-medium">{error}</p>
         </div>
       )}

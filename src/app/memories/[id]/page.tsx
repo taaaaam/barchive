@@ -14,7 +14,6 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
 import ImageModal from "@/components/ImageModal";
 import UploadModal from "@/components/UploadModal";
 import {
@@ -43,7 +42,6 @@ export default function MemoryPage({
   const [memory, setMemory] = useState<Memory | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
@@ -53,18 +51,9 @@ export default function MemoryPage({
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      if (user) {
-        // Fetch user profile
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data());
-        }
-      } else {
-        setUserProfile(null);
-        router.push("/login");
-      }
+      if (!user) router.push("/login");
     });
 
     return () => unsubscribe();
@@ -205,11 +194,11 @@ export default function MemoryPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-medium">Loading memory...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+            <p className="text-white/75">Loading memory...</p>
           </div>
         </div>
       </div>
@@ -218,15 +207,15 @@ export default function MemoryPage({
 
   if (!memory) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <h1 className="text-3xl font-serif font-bold text-gray-dark mb-4">
+            <h1 className="text-3xl font-serif font-bold text-white mb-4">
               Memory Not Found
             </h1>
             <Link
               href="/memories"
-              className="inline-flex items-center px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300"
+              className="inline-flex items-center px-6 py-3 bg-white text-green font-semibold rounded-lg hover:bg-gray-light transition-all duration-300"
             >
               Back to Memories
             </Link>
@@ -237,10 +226,9 @@ export default function MemoryPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
+      <header className="page-header-enter bg-green relative">
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -264,27 +252,6 @@ export default function MemoryPage({
                 Back to Memories
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/members"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Delegations
-              </Link>
-              <Link
-                href="/newsletters"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Newsletters
-              </Link>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
-                />
-              )}
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
@@ -300,17 +267,17 @@ export default function MemoryPage({
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-12">
+      <main className="page-main-enter max-w-7xl mx-auto px-8 py-12">
         {/* Photos Section Header */}
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-serif font-bold text-gray-dark">
+          <h2 className="text-3xl font-serif font-bold text-white">
             Photos ({memory.photos.length})
           </h2>
           <div className="flex gap-3">
             <button
               onClick={handleOpenUploadModal}
               disabled={uploading}
-              className="inline-flex items-center px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-6 py-3 bg-white text-green font-semibold rounded-lg hover:bg-gray-light transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg
                 className="mr-2 w-5 h-5"
@@ -331,12 +298,12 @@ export default function MemoryPage({
               <button
                 onClick={handleDeleteMemory}
                 disabled={deleting}
-                className="inline-flex items-center px-4 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete memory"
               >
                 {deleting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-400 border-t-transparent mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/60 border-t-transparent mr-2"></div>
                     Deleting...
                   </>
                 ) : (
@@ -365,18 +332,20 @@ export default function MemoryPage({
         {/* Photos Grid */}
         <div className="mb-8">
           {memory.photos.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
               {memory.photos.map((photo, index) => (
                 <div
                   key={index}
-                  className="relative group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-green/20 hover:border-green/40"
+                  className="relative group mb-6 break-inside-avoid bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden"
                 >
-                  <div className="aspect-square relative">
+                  <div className="relative">
                     <Image
                       src={photo}
                       alt={`Memory photo ${index + 1}`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      width={800}
+                      height={800}
+                      sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                      className="w-full h-auto"
                     />
 
                     {/* Delete button - only show for memory author */}
@@ -440,9 +409,9 @@ export default function MemoryPage({
             </div>
           ) : (
             <div className="text-center py-20">
-              <div className="inline-block p-6 bg-green/5 rounded-full border-2 border-green/20 mb-6">
+              <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
                 <svg
-                  className="w-16 h-16 text-green"
+                  className="w-16 h-16 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -455,10 +424,10 @@ export default function MemoryPage({
                   />
                 </svg>
               </div>
-              <h3 className="text-2xl font-serif font-bold text-gray-dark mb-4">
+              <h3 className="text-2xl font-serif font-bold text-white mb-4">
                 No Photos Yet
               </h3>
-              <p className="text-gray-medium mb-8 max-w-md mx-auto">
+              <p className="text-white/75 mb-8 max-w-md mx-auto">
                 Start building this memory by uploading your first photo above.
               </p>
             </div>
@@ -468,14 +437,14 @@ export default function MemoryPage({
         {/* Links Section */}
         {memory.links && memory.links.length > 0 && (
           <div className="mb-8">
-            <h2 className="text-2xl font-serif font-bold text-gray-dark mb-6">
+            <h2 className="text-2xl font-serif font-bold text-white mb-6">
               External Links ({memory.links.length})
             </h2>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {memory.links.map((link, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-green/20 p-4 group"
+                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-4 group"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
@@ -516,11 +485,11 @@ export default function MemoryPage({
         )}
 
         {/* Memory Info */}
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 p-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-gray-medium">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <span>Created by {memory.authorName}</span>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green/10 text-green border border-green/20">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green/10 text-green">
                 Class of {memory.classYear}
               </span>
             </div>

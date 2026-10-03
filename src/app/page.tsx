@@ -8,89 +8,59 @@ import {
   orderBy,
   doc,
   getDoc,
-  deleteDoc,
-  updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import ProfileDropdown from "@/components/ProfileDropdown";
-import EditPostModal from "@/components/EditPostModal";
 import MapLink from "@/components/MapLink";
+import CameraViewer from "@/components/CameraViewer";
 import { useRouter } from "next/navigation";
+import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
 export default function Home() {
-  const [allPosts, setAllPosts] = useState<any[]>([]);
-  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [editingPost, setEditingPost] = useState<any>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [showLogo, setShowLogo] = useState(false);
   const [showNav, setShowNav] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  // False until Firebase reports whether someone is signed in, so neither
+  // version of the page flashes before we know which one to show
+  const [authReady, setAuthReady] = useState(false);
+  // Entrance animation, played once right after logging in
+  const [playIntro] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const flagged = sessionStorage.getItem(HOME_INTRO_KEY) === "1";
+      sessionStorage.removeItem(HOME_INTRO_KEY);
+      return (
+        flagged &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      );
+    } catch {
+      return false;
+    }
+  });
+  const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
   const [allPhotos, setAllPhotos] = useState<Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }>>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchPosts() {
-      // Fetch posts from Firestore
-      const postsData: any[] = [];
+    async function fetchPhotos() {
       const photos: Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }> = [];
 
       try {
-        // Query posts ordered by creation date (most recent first)
-        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
+        const [postsSnapshot, memoriesSnapshot] = await Promise.all([
+          getDocs(query(collection(db, "posts"), orderBy("createdAt", "desc"))),
+          getDocs(query(collection(db, "memories"), orderBy("createdAt", "desc"))),
+        ]);
 
-        if (snapshot.empty) {
-          console.log("No documents found in posts collection!");
-        }
-
-        // Fetch posts with author profile pictures and comment counts
-        for (const postDoc of snapshot.docs) {
+        // Featured images from public posts
+        postsSnapshot.docs.forEach((postDoc) => {
           const data = postDoc.data();
-          let authorProfilePicture = null;
-          let commentCount = 0;
-
-          // Fetch author's profile picture if authorId exists
-          if (data.authorId) {
-            try {
-              const authorDoc = await getDoc(doc(db, "users", data.authorId));
-              if (authorDoc.exists()) {
-                const authorData = authorDoc.data();
-                authorProfilePicture = authorData?.profilePicture || null;
-              }
-            } catch (error) {
-              console.error("Error fetching author profile:", error);
-            }
-          }
-
-          // Fetch comment count
-          try {
-            const commentsSnapshot = await getDocs(
-              collection(db, "posts", postDoc.id, "comments")
-            );
-            commentCount = commentsSnapshot.size;
-          } catch (error) {
-            console.error("Error fetching comment count:", error);
-          }
-
-          // Fetch like count
-          let likeCount = 0;
-          try {
-            const likesSnapshot = await getDocs(
-              collection(db, "posts", postDoc.id, "likes")
-            );
-            likeCount = likesSnapshot.size;
-          } catch (error) {
-            console.error("Error fetching like count:", error);
-          }
-
-          // Collect featured images for photo wheel
-          if (data.featuredImage && data.featuredImage.trim() !== '') {
+          if (!data.private && !data.archived && data.featuredImage && data.featuredImage.trim() !== '') {
             photos.push({
               url: data.featuredImage,
               sourceType: 'post',
@@ -98,77 +68,44 @@ export default function Home() {
               sourceId: postDoc.id,
             });
           }
+        });
 
-          postsData.push({
-            id: postDoc.id,
-            slug: postDoc.id, // Use document ID as slug
-            title: data.title || postDoc.id,
-            content: data.content || "",
-            date:
-              data.createdAt?.toDate?.()?.toISOString() ||
-              new Date().toISOString(),
-            excerpt: data.excerpt || "",
-            authorName: data.authorName || "Unknown Author",
-            authorId: data.authorId,
-            authorProfilePicture: authorProfilePicture,
-            featuredImage: data.featuredImage || null,
-            commentCount: commentCount,
-            likeCount: likeCount,
-            private: data.private || false,
-          });
-        }
+        // Photos from memories
+        memoriesSnapshot.docs.forEach((memoryDoc) => {
+          const memoryData = memoryDoc.data();
+          if (memoryData.photos && Array.isArray(memoryData.photos)) {
+            memoryData.photos.forEach((photo: string) => {
+              if (photo && photo.trim() !== '') {
+                photos.push({
+                  url: photo,
+                  sourceType: 'memory',
+                  sourceTitle: memoryData.title || memoryDoc.id,
+                  sourceId: memoryDoc.id,
+                });
+              }
+            });
+          }
+        });
 
-        // Fetch memories photos
-        try {
-          const memoriesQuery = query(
-            collection(db, "memories"),
-            orderBy("createdAt", "desc")
-          );
-          const memoriesSnapshot = await getDocs(memoriesQuery);
-          
-          memoriesSnapshot.docs.forEach((memoryDoc) => {
-            const memoryData = memoryDoc.data();
-            if (memoryData.photos && Array.isArray(memoryData.photos)) {
-              memoryData.photos.forEach((photo: string) => {
-                if (photo && photo.trim() !== '') {
-                  photos.push({
-                    url: photo,
-                    sourceType: 'memory',
-                    sourceTitle: memoryData.title || memoryDoc.id,
-                    sourceId: memoryDoc.id,
-                  });
-                }
-              });
-            }
-          });
-        } catch (error) {
-          console.error("Error fetching memories photos:", error);
-        }
-
-        // Filter out any photos with empty URLs and shuffle
-        const validPhotos = photos.filter(photo => photo.url && photo.url.trim() !== '');
-        const shuffledPhotos = validPhotos.sort(() => Math.random() - 0.5);
+        const shuffledPhotos = photos.sort(() => Math.random() - 0.5);
         setAllPhotos(shuffledPhotos);
         if (shuffledPhotos.length > 0) {
           setCurrentPhotoIndex(Math.floor(Math.random() * shuffledPhotos.length));
         }
-        
-        setAllPosts(postsData);
       } catch (error) {
-        console.error("Error fetching posts:", error);
-        // Fallback to empty array if Firebase fails
-        setPosts([]);
+        console.error("Error fetching photos:", error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPosts();
+    fetchPhotos();
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      setAuthReady(true);
       if (user) {
         // Fetch user profile
         const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -184,24 +121,6 @@ export default function Home() {
     return () => unsubscribe();
   }, [router]);
 
-  // Filter posts based on user state and privacy settings
-  useEffect(() => {
-    const filteredPosts = allPosts.filter((post) => {
-      // If user is not logged in, only show public posts
-      if (!user) {
-        return !post.private;
-      }
-      // If user is the author, show all their posts (private or not)
-      if (post.authorId === user.uid) {
-        return true;
-      }
-      // Otherwise, only show public posts
-      return !post.private;
-    });
-    
-    setPosts(filteredPosts);
-  }, [allPosts, user]);
-
   // Trigger logo, navigation, and profile fade-in when component mounts
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -212,100 +131,83 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleEditPost = (post: any) => {
-    setEditingPost(post);
-    setEditModalOpen(true);
-  };
+  // Logo intro: start where the big signed-out crest sits (centred, large),
+  // then glide up into its real spot and shrink to its real size
+  const signedIn = authReady && !!user;
+  useLayoutEffect(() => {
+    if (!playIntro || !signedIn) return;
+    const logo = logoRefs.current.find((el) => el && el.offsetParent !== null);
+    if (!logo) return;
+    const rect = logo.getBoundingClientRect();
+    const crestSize = window.innerWidth >= 768 ? 384 : 256;
+    const startX = window.innerWidth / 2 - (rect.left + rect.width / 2);
+    const startY = window.innerHeight / 2 - 40 - (rect.top + rect.height / 2);
+    logo.animate(
+      [
+        {
+          transform: `translate(${startX}px, ${startY}px) scale(${crestSize / rect.width})`,
+          opacity: 1,
+        },
+        { transform: "none", opacity: 1 },
+      ],
+      { duration: 1100, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "both" }
+    );
+  }, [playIntro, signedIn]);
 
-  const handleDeletePost = async (post: any) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete "${post.title}"? This action cannot be undone.`
-      )
-    ) {
-      try {
-        await deleteDoc(doc(db, "posts", post.id));
-        // Remove the post from the local state
-        setAllPosts(allPosts.filter((p) => p.id !== post.id));
-        alert("Post deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting post:", error);
-        alert("Failed to delete post. Please try again.");
-      }
-    }
-  };
-
-  const handleCloseEditModal = () => {
-    setEditModalOpen(false);
-    setEditingPost(null);
-  };
-
-  const handleSavePost = async (updatedPost: any) => {
-    try {
-      // Update the post in Firestore
-      const postRef = doc(db, "posts", updatedPost.id);
-      await updateDoc(postRef, {
-        title: updatedPost.title,
-        content: updatedPost.content,
-        excerpt: updatedPost.excerpt,
-        featuredImage: updatedPost.featuredImage,
-        private: updatedPost.private || false,
-        updatedAt: new Date(),
-      });
-
-      // Update the local state
-      setAllPosts(
-        allPosts.map((p) =>
-          p.id === updatedPost.id ? { ...p, ...updatedPost } : p
-        )
-      );
-      setEditModalOpen(false);
-      setEditingPost(null);
-      alert("Post updated successfully!");
-    } catch (error) {
-      console.error("Error updating post:", error);
-      alert("Failed to update post. Please try again.");
-    }
-  };
-
-  const getNextRandomPhoto = () => {
+  // Photos are shuffled once on load, so stepping through them in order is still random
+  const showNextPhoto = () => {
     if (allPhotos.length === 0) return;
-    // Get a random index different from current
-    let newIndex;
-    do {
-      newIndex = Math.floor(Math.random() * allPhotos.length);
-    } while (newIndex === currentPhotoIndex && allPhotos.length > 1);
-    setCurrentPhotoIndex(newIndex);
+    setCurrentPhotoIndex((i) => (i + 1) % allPhotos.length);
   };
 
-  const getPreviousRandomPhoto = () => {
+  const showPreviousPhoto = () => {
     if (allPhotos.length === 0) return;
-    // Get a random index different from current
-    let newIndex;
-    do {
-      newIndex = Math.floor(Math.random() * allPhotos.length);
-    } while (newIndex === currentPhotoIndex && allPhotos.length > 1);
-    setCurrentPhotoIndex(newIndex);
+    setCurrentPhotoIndex((i) => (i - 1 + allPhotos.length) % allPhotos.length);
   };
+
+  if (!authReady) {
+    return <div className="min-h-screen bg-green" />;
+  }
+
+  // Signed out: just the crest and a way in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-green flex flex-col items-center justify-center px-8">
+        <Image
+          src="/assets/bar_logo_no_bg.png"
+          alt="BaR"
+          width={600}
+          height={600}
+          priority
+          className="home-crest w-64 h-64 md:w-96 md:h-96"
+        />
+        <Link
+          href="/login"
+          className="home-enter mt-10 px-6 py-2 font-serif text-2xl text-white/80 hover:text-white tracking-[0.2em] transition-colors duration-500"
+        >
+          Enter
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className={`min-h-screen bg-green ${playIntro ? "home-intro" : ""}`}>
       {/* Header */}
       <header
-        className={`bg-green shadow-2xl ${
-          user ? "border-b-4 border-green-light" : ""
-        } min-h-screen flex items-center`}
+        className="bg-green min-h-screen flex items-center"
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8 w-full flex flex-col justify-between min-h-screen">
           {/* Navigation */}
           {/* Desktop Layout */}
-          <div className="hidden md:flex justify-between items-center mb-8">
+          {/* Three columns so the crest + title sit exactly in the middle and the
+              nav text on both sides lines up with the centre of that stack */}
+          <div className="hidden md:grid grid-cols-[1fr_auto_1fr] items-center gap-8 mb-8">
             {/* Left side - Navigation Links or empty space */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 justify-self-start">
               {user && userProfile && (
                 <nav
-                  className={`flex items-center gap-6 transition-opacity duration-500 ease-in-out ${
+                  className={`intro-nav flex items-center gap-6 transition-opacity duration-500 ease-in-out ${
                     showNav ? "opacity-100" : "opacity-0"
                   }`}
                 >
@@ -314,6 +216,12 @@ export default function Home() {
                     className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
                   >
                     Memories
+                  </Link>
+                  <Link
+                    href="/chronicles"
+                    className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                  >
+                    Chronicles
                   </Link>
                   <Link
                     href="/members"
@@ -326,15 +234,27 @@ export default function Home() {
               )}
             </div>
 
-            {/* Center Title */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
-              <h1 className="text-2xl font-serif font-bold text-white">
+            {/* Center: crest above the title */}
+            <div className="flex flex-col items-center">
+              <Image
+                src="/assets/bar_logo_no_bg.png"
+                ref={(el) => {
+                  logoRefs.current[1] = el;
+                }}
+                alt="BaR Logo"
+                width={300}
+                height={300}
+                className={`w-20 h-20 mb-2 transition-opacity duration-500 ease-in-out ${
+                  showLogo ? "opacity-100" : "opacity-0"
+                }`}
+              />
+              <h1 className="intro-title text-2xl font-serif font-bold text-white">
                 The BaRchive
               </h1>
             </div>
 
             {/* Right side - Auth Status */}
-            <div className="flex items-center gap-4">
+            <div className="intro-nav-right flex items-center gap-4 justify-self-end">
               {user && userProfile && (
                 <Link
                   href="/newsletters"
@@ -365,16 +285,7 @@ export default function Home() {
                 >
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className={`px-6 py-3 text-white hover:text-gray-light transition-all duration-500 ease-in-out text-sm font-semibold ${
-                    showProfile ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  Sign In
-                </Link>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -382,7 +293,19 @@ export default function Home() {
           <div className="md:hidden mb-8">
             {/* Title */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-serif font-bold text-white">
+              <Image
+                src="/assets/bar_logo_no_bg.png"
+                ref={(el) => {
+                  logoRefs.current[0] = el;
+                }}
+                alt="BaR Logo"
+                width={300}
+                height={300}
+                className={`w-20 h-20 mx-auto mb-2 transition-opacity duration-500 ease-in-out ${
+                  showLogo ? "opacity-100" : "opacity-0"
+                }`}
+              />
+              <h1 className="intro-title text-2xl font-serif font-bold text-white">
                 The BaRchive
               </h1>
             </div>
@@ -390,7 +313,7 @@ export default function Home() {
             {/* Navigation Links */}
             {user && userProfile && (
               <div
-                className={`flex flex-wrap justify-center items-center gap-4 mb-4 transition-opacity duration-500 ease-in-out ${
+                className={`intro-nav flex flex-wrap justify-center items-center gap-4 mb-4 transition-opacity duration-500 ease-in-out ${
                   showNav ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -399,6 +322,12 @@ export default function Home() {
                   className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
                 >
                   Memories
+                </Link>
+                <Link
+                  href="/chronicles"
+                  className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
+                >
+                  Chronicles
                 </Link>
                 <Link
                   href="/members"
@@ -417,7 +346,7 @@ export default function Home() {
             )}
 
             {/* Auth Status */}
-            <div className="flex justify-center">
+            <div className="intro-nav-right flex justify-center">
               {user && userProfile ? (
                 <div
                   className={`transition-opacity duration-500 ease-in-out ${
@@ -438,45 +367,24 @@ export default function Home() {
                 >
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                 </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className={`px-6 py-3 text-white hover:text-gray-light transition-all duration-500 ease-in-out text-sm font-semibold ${
-                    showProfile ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  Sign In
-                </Link>
-              )}
+              ) : null}
             </div>
           </div>
-
           {/* Main Content - Centered */}
-          <div className="flex-1 flex flex-col justify-center items-center text-center">
-            <div className="mb-8">
-              <Image
-                src="/assets/bar_logo_no_bg.png"
-                alt="BaR Logo"
-                width={300}
-                height={300}
-                className={`w-80 h-80 mx-auto transition-opacity duration-500 ease-in-out ${
-                  showLogo ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            </div>
-
+          <div className="flex-1 flex flex-col items-center text-center">
             {user && userProfile && (
               <div
-                className={`transition-opacity duration-500 ease-in-out ${
+                className={`intro-camera w-full flex-1 flex flex-col justify-center transition-opacity duration-500 ease-in-out ${
                   showProfile ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <Link
-                  href="#chronicles"
-                  className="text-white hover:text-gray-light font-serif font-semibold text-lg transition-colors duration-300 underline hover:no-underline"
-                >
-                  Read The Chronicles
-                </Link>
+                <CameraViewer
+                  photos={allPhotos}
+                  index={currentPhotoIndex}
+                  loading={loading}
+                  onPrevious={showPreviousPhoto}
+                  onNext={showNextPhoto}
+                />
               </div>
             )}
           </div>
@@ -485,396 +393,6 @@ export default function Home() {
           <div className="h-16"></div>
         </div>
       </header>
-
-      {/* Main Content - Only show for authenticated users */}
-      {user && (
-        <main className="max-w-7xl mx-auto px-8 py-24">
-          {loading ? (
-            <div className="flex justify-center items-center py-32">
-              <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent"></div>
-                <p className="mt-6 text-gray-medium font-serif text-lg">
-                  Loading the chronicles...
-                </p>
-              </div>
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-32">
-              <div className="mb-8">
-                <div className="inline-block p-6 bg-green/5 rounded-full border-2 border-green/20 mb-6">
-                  <svg
-                    className="w-16 h-16 text-green"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                  </svg>
-                </div>
-              </div>
-              <h2 className="text-4xl font-serif font-bold text-gray-dark mb-6">
-                The Chronicle Awaits
-              </h2>
-              <p className="text-xl text-gray-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-                Be the first to inscribe your wisdom into our distinguished
-                collection of knowledge.
-              </p>
-              <Link
-                href="/create"
-                className="inline-flex items-center px-8 py-4 bg-green text-white font-serif font-semibold text-lg rounded-lg hover:bg-green-dark transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-green/20"
-              >
-                <svg
-                  className="mr-3 w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Begin the Chronicle
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-16">
-              {/* Photo Wheel */}
-              {allPhotos.length > 0 && allPhotos[currentPhotoIndex]?.url && allPhotos[currentPhotoIndex].url.trim() !== '' && (
-                <div className="mb-16">
-                  <div className="relative max-w-4xl mx-auto">
-                    <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-green/30 bg-gray-100">
-                      <Image
-                        src={allPhotos[currentPhotoIndex].url}
-                        alt="Random photo from The Chronicles"
-                        fill
-                        className="object-cover transition-opacity duration-500"
-                        priority
-                      />
-                      {/* Navigation Arrows */}
-                      <button
-                        onClick={getPreviousRandomPhoto}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-green p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
-                        aria-label="Previous random photo"
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 19l-7-7 7-7"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={getNextRandomPhoto}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-green p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-10"
-                        aria-label="Next random photo"
-                      >
-                        <svg
-                          className="w-6 h-6"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    {/* Album Information */}
-                    {allPhotos[currentPhotoIndex]?.sourceTitle && (
-                      <div className="mt-4 text-center">
-                        <p className="text-gray-600 text-sm font-medium">
-                          From {allPhotos[currentPhotoIndex].sourceType === 'post' ? 'Post' : 'Memory'}:{' '}
-                          <span className="text-green font-semibold">
-                            {allPhotos[currentPhotoIndex].sourceTitle}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-3 items-center mb-16">
-                <div></div>
-                <div className="text-center">
-                  <h2
-                    id="chronicles"
-                    className="text-4xl font-serif font-bold text-gray-dark"
-                  >
-                    The Chronicles
-                  </h2>
-                </div>
-                <div className="flex justify-end">
-                  <Link
-                    href="/create"
-                    className="inline-flex items-center px-4 py-2 bg-green text-white font-serif font-semibold text-sm rounded-lg hover:bg-green-dark transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 border border-green/20"
-                  >
-                    <svg
-                      className="mr-1.5 w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Create a post
-                  </Link>
-                </div>
-              </div>
-              <div className="space-y-0">
-                {posts.map((post, index) => (
-                  <article
-                    key={post.slug}
-                    className="group border-b border-gray-200 hover:bg-gray-50/50 transition-colors duration-200 py-8"
-                  >
-                    <div className="flex gap-8">
-                      {/* Content */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-3">
-                          <time className="text-sm text-gray-500 font-medium">
-                            {new Date(post.date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </time>
-                          <div className="flex items-center gap-2">
-                            {post.authorProfilePicture ? (
-                              <div className="w-5 h-5 rounded-full overflow-hidden">
-                                <Image
-                                  src={post.authorProfilePicture}
-                                  alt={post.authorName}
-                                  width={20}
-                                  height={20}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center">
-                                <svg
-                                  className="w-3 h-3 text-gray-600"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                  />
-                                </svg>
-                              </div>
-                            )}
-                            <span className="text-sm text-gray-600">
-                              by{" "}
-                              <span className="font-medium text-gray-900">
-                                {post.authorName}
-                              </span>
-                            </span>
-                            {post.private && post.authorId === user?.uid && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-800 rounded-full border border-amber-200">
-                                <svg
-                                  className="w-3 h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                  />
-                                </svg>
-                                Private
-                              </span>
-                            )}
-                          </div>
-                          {user &&
-                            userProfile &&
-                            post.authorId === user.uid && (
-                              <div className="flex items-center gap-1 ml-auto">
-                                <button
-                                  onClick={() => handleEditPost(post)}
-                                  className="p-1.5 text-gray-400 hover:text-green hover:bg-green/10 rounded transition-all duration-200"
-                                  title="Edit post"
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handleDeletePost(post)}
-                                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-200"
-                                  title="Delete post"
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                        </div>
-
-                        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-3 hover:text-green transition-colors leading-tight">
-                          <Link href={`/posts/${post.slug}`} className="block">
-                            {post.title}
-                          </Link>
-                        </h3>
-
-                        {post.excerpt && (
-                          <p className="text-gray-600 leading-relaxed mb-4 line-clamp-2">
-                            {post.excerpt}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <Link
-                            href={`/posts/${post.slug}`}
-                            className="inline-flex items-center text-green hover:text-green-dark font-medium text-sm transition-colors duration-200 group"
-                          >
-                            Read more
-                            <svg
-                              className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          </Link>
-
-                          {/* Like and Comment Count */}
-                          <div className="flex items-center gap-4 text-gray-500 text-sm">
-                            {/* Cheers Count */}
-                            <div className="flex items-center gap-1">
-                              <i className="fas fa-martini-glass w-4 h-4"></i>
-                              <span>{post.likeCount || 0}</span>
-                            </div>
-
-                            {/* Comment Count */}
-                            <div className="flex items-center gap-1">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                                />
-                              </svg>
-                              <span>{post.commentCount || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Featured Image */}
-                      {post.featuredImage && (
-                        <div className="flex-shrink-0 w-40 h-28 overflow-hidden rounded-lg border-2 border-green/20 hover:border-green/40 transition-colors duration-200">
-                          <img
-                            src={post.featuredImage}
-                            alt={post.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          )}
-        </main>
-      )}
-
-      {/* Footer - Only show for authenticated users */}
-      {user && (
-        <footer
-          className="bg-green text-white mt-32 relative"
-          style={{
-            boxShadow:
-              "0 -15px 35px -5px rgba(0, 0, 0, 0.25), 0 -15px 15px -5px rgba(0, 0, 0, 0.15)",
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-95"></div>
-          <div className="relative max-w-7xl mx-auto px-8 py-16">
-            <div className="text-center">
-              <h3 className="text-3xl font-serif font-bold mb-6">
-                The BaRchive
-              </h3>
-              <p className="text-white/80 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
-                Preserving the wisdom of Yale's coolest society
-              </p>
-
-              <p className="text-white/60 font-serif">
-                &copy; 2025 BaR. Est. 2011. Built with Next.js, Tailwind CSS &
-                Firebase.
-              </p>
-            </div>
-          </div>
-        </footer>
-      )}
-
-      {/* Edit Post Modal */}
-      {editModalOpen && editingPost && (
-        <EditPostModal
-          post={editingPost}
-          onClose={handleCloseEditModal}
-          onSave={handleSavePost}
-        />
-      )}
     </div>
   );
 }

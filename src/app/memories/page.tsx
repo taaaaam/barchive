@@ -16,8 +16,6 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
-import MapLink from "@/components/MapLink";
 import { getDoc } from "firebase/firestore";
 
 interface Memory {
@@ -237,24 +235,23 @@ export default function MemoriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+      <div className="min-h-screen bg-green flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-medium">Loading memories...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-white/75">Loading memories...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
       <header
-        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+        className={`page-header-enter bg-green relative transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -278,28 +275,6 @@ export default function MemoriesPage() {
                 Back to Home
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/members"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Delegations
-              </Link>
-              <MapLink />
-              <Link
-                href="/newsletters"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Newsletters
-              </Link>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
-                />
-              )}
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
@@ -314,26 +289,26 @@ export default function MemoriesPage() {
 
       {/* Main Content */}
       <main
-        className={`max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
+        className={`page-main-enter max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
         <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <h2 className="text-3xl font-serif font-bold text-gray-dark">
+            <h2 className="text-3xl font-serif font-bold text-white">
               {selectedClassYear === "all"
                 ? "All Memories"
                 : `Class of ${selectedClassYear} Memories`}{" "}
               ({filteredMemories.length})
             </h2>
             <div className="flex items-center gap-2">
-              <label className="text-sm font-semibold text-gray-dark">
+              <label className="text-sm font-semibold text-white">
                 Filter by class:
               </label>
               <select
                 value={selectedClassYear}
                 onChange={(e) => setSelectedClassYear(e.target.value)}
-                className="px-3 py-2 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                className="border border-gray-300 focus:border-green px-3 py-2 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
               >
                 <option value="all">All Classes</option>
                 {classYears.map((year) => (
@@ -346,7 +321,7 @@ export default function MemoriesPage() {
           </div>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="px-6 py-3 bg-white text-green font-semibold rounded-lg hover:bg-gray-light transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             {showCreateForm ? "Cancel" : "Create New Memory"}
           </button>
@@ -354,7 +329,7 @@ export default function MemoriesPage() {
 
         {/* Edit Memory Form */}
         {editingMemory && (
-          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl border-2 border-green/20">
+          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               Edit Memory
             </h3>
@@ -373,7 +348,7 @@ export default function MemoriesPage() {
                     })
                   }
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                   placeholder="Enter memory title"
                 />
               </div>
@@ -389,7 +364,7 @@ export default function MemoriesPage() {
                       description: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                   rows={3}
                   placeholder="Enter memory description"
                 />
@@ -407,7 +382,7 @@ export default function MemoriesPage() {
                     })
                   }
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                 >
                   <option value="">Select class year</option>
                   {availableClassYears.map((year) => (
@@ -432,7 +407,7 @@ export default function MemoriesPage() {
                       onKeyPress={(e) =>
                         e.key === "Enter" && (e.preventDefault(), addLink())
                       }
-                      className="flex-1 px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                      className="border border-gray-300 focus:border-green flex-1 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                       placeholder="Add link to external photo collection (e.g., Adobe Lightroom, Google Photos)"
                     />
                     <button
@@ -516,7 +491,7 @@ export default function MemoriesPage() {
 
         {/* Create Memory Form */}
         {showCreateForm && (
-          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl border-2 border-green/20">
+          <div className="mb-8 p-6 bg-white rounded-2xl shadow-2xl">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               Create New Memory
             </h3>
@@ -532,7 +507,7 @@ export default function MemoriesPage() {
                     setNewMemory({ ...newMemory, title: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                   placeholder="Enter memory title"
                 />
               </div>
@@ -545,7 +520,7 @@ export default function MemoriesPage() {
                   onChange={(e) =>
                     setNewMemory({ ...newMemory, description: e.target.value })
                   }
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                   rows={3}
                   placeholder="Enter memory description"
                 />
@@ -560,7 +535,7 @@ export default function MemoriesPage() {
                     setNewMemory({ ...newMemory, classYear: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                 >
                   <option value="">Select class year</option>
                   {availableClassYears.map((year) => (
@@ -585,7 +560,7 @@ export default function MemoriesPage() {
                       onKeyPress={(e) =>
                         e.key === "Enter" && (e.preventDefault(), addLink())
                       }
-                      className="flex-1 px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                      className="border border-gray-300 focus:border-green flex-1 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                       placeholder="Add link to external photo collection (e.g., Adobe Lightroom, Google Photos)"
                     />
                     <button
@@ -655,7 +630,7 @@ export default function MemoriesPage() {
           {filteredMemories.map((memory) => (
             <div
               key={memory.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden group hover:-translate-y-1 relative"
+              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 relative"
             >
               {/* Edit/Delete buttons for memory publisher */}
               {user && memory.authorId === user.uid && (
@@ -724,7 +699,7 @@ export default function MemoriesPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green/10 to-green/5">
+                    <div className="w-full h-full flex items-center justify-center bg-green/5">
                       <div className="text-center">
                         <svg
                           className="w-12 h-12 text-green/60 mx-auto mb-2"
@@ -755,7 +730,7 @@ export default function MemoriesPage() {
                 </div>
 
                 {/* Bottom overlay with metadata */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4">
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4">
                   <div className="text-white">
                     <h3 className="font-semibold text-lg mb-1 line-clamp-1 group-hover:text-green-300 transition-colors">
                       {memory.title}
@@ -819,9 +794,9 @@ export default function MemoriesPage() {
 
         {filteredMemories.length === 0 && (
           <div className="text-center py-20">
-            <div className="inline-block p-6 bg-green/5 rounded-full border-2 border-green/20 mb-6">
+            <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
               <svg
-                className="w-16 h-16 text-green"
+                className="w-16 h-16 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -834,16 +809,16 @@ export default function MemoriesPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-2xl font-serif font-bold text-gray-dark mb-4">
+            <h3 className="text-2xl font-serif font-bold text-white mb-4">
               No Memories Yet
             </h3>
-            <p className="text-gray-medium mb-8 max-w-md mx-auto">
+            <p className="text-white/75 mb-8 max-w-md mx-auto">
               Be the first to create a memory and start preserving our society's
               cherished moments.
             </p>
             <button
               onClick={() => setShowCreateForm(true)}
-              className="inline-flex items-center px-8 py-4 bg-green text-white font-serif font-semibold text-lg rounded-lg hover:bg-green-dark transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 border-2 border-green/20"
+              className="inline-flex items-center px-8 py-4 bg-white text-green font-serif font-semibold text-lg rounded-lg hover:bg-gray-light transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
             >
               <svg
                 className="mr-3 w-6 h-6"

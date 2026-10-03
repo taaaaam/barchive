@@ -4,9 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
 
 interface Location {
   displayName: string;
@@ -37,23 +36,11 @@ export default function MemberPage({
   const resolvedParams = use(params);
   const [member, setMember] = useState<Member | null>(null);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        // Fetch user profile
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUserProfile(userDoc.data());
-        }
-      } else {
-        setUserProfile(null);
-        router.push("/login");
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) router.push("/login");
     });
 
     return () => unsubscribe();
@@ -121,11 +108,11 @@ export default function MemberPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-            <p className="text-gray-medium">Loading member...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+            <p className="text-white/75">Loading member...</p>
           </div>
         </div>
       </div>
@@ -134,15 +121,15 @@ export default function MemberPage({
 
   if (!member) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+      <div className="min-h-screen bg-green">
         <div className="max-w-7xl mx-auto px-8 py-20">
           <div className="text-center">
-            <h1 className="text-3xl font-serif font-bold text-gray-dark mb-4">
+            <h1 className="text-3xl font-serif font-bold text-white mb-4">
               Member Not Found
             </h1>
             <Link
               href="/members"
-              className="inline-flex items-center px-6 py-3 bg-green text-white font-semibold rounded-lg hover:bg-green-dark transition-all duration-300"
+              className="inline-flex items-center px-6 py-3 bg-white text-green hover:bg-gray-light font-semibold rounded-lg transition-all duration-300"
             >
               Back to Members
             </Link>
@@ -153,10 +140,9 @@ export default function MemberPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
+      <header className="page-header-enter bg-green relative">
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -180,21 +166,6 @@ export default function MemberPage({
                 Back to Members
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/memories"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Memories
-              </Link>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
-                />
-              )}
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
@@ -208,15 +179,15 @@ export default function MemberPage({
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 overflow-hidden">
+      <main className="page-main-enter max-w-4xl mx-auto px-8 py-12">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           {/* Profile Section */}
           <div className="p-8">
             <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
               {/* Profile Picture */}
               <div className="flex-shrink-0">
                 {member.profilePicture ? (
-                  <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-green/20">
+                  <div className="relative w-48 h-48 rounded-full overflow-hidden">
                     <Image
                       src={member.profilePicture}
                       alt={`${member.firstName} ${member.lastName}`}
@@ -228,7 +199,7 @@ export default function MemberPage({
                     />
                   </div>
                 ) : (
-                  <div className="w-48 h-48 rounded-full bg-green/10 border-4 border-green/20 flex items-center justify-center">
+                  <div className="w-48 h-48 rounded-full bg-green/10 flex items-center justify-center">
                     <svg
                       className="w-24 h-24 text-green"
                       fill="none"
@@ -382,7 +353,7 @@ export default function MemberPage({
 
             {/* Bio Section */}
             {member.bio && (
-              <div className="mt-8 pt-8 border-t border-green/20">
+              <div className="mt-8 pt-8">
                 <h3 className="text-2xl font-serif font-bold text-gray-dark mb-4">
                   About
                 </h3>

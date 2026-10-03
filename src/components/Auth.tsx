@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 import ClassSelection from "./ClassSelection";
 import MemberSelection from "./MemberSelection";
 import AdminDashboard from "./AdminDashboard";
+import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
 export default function Auth() {
   const [user, setUser] = useState<User | null>(null);
@@ -95,7 +96,12 @@ export default function Auth() {
       if (userProfile.isAdmin) {
         router.push("/admin");
       } else {
-        // Regular user - redirect to home page
+        // Regular user - redirect to home page, which plays its intro animation
+        try {
+          sessionStorage.setItem(HOME_INTRO_KEY, "1");
+        } catch {
+          // Storage unavailable (e.g. private mode); just skip the intro
+        }
         router.push("/");
       }
     }
@@ -154,7 +160,7 @@ export default function Auth() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -163,7 +169,7 @@ export default function Auth() {
     // Show loading while redirecting (both admin and regular users)
     return (
       <div className="flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -175,11 +181,10 @@ export default function Auth() {
 
   if (currentStep === "admin-login") {
     return (
-      <div className="max-w-lg mx-auto p-10 bg-white rounded-2xl shadow-2xl border-2 border-green/20 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+      <div className="max-w-lg mx-auto p-10 bg-white rounded-2xl shadow-2xl relative">
         <div className="relative">
           <div className="text-center mb-8">
-            <div className="inline-block p-4 bg-green/5 rounded-full border-2 border-green/30 mb-6">
+            <div className="inline-block p-4 bg-green/5 rounded-full mb-6">
               <svg
                 className="w-10 h-10 text-green"
                 fill="currentColor"
@@ -208,7 +213,7 @@ export default function Auth() {
                   setAdminLogin({ ...adminLogin, email: e.target.value })
                 }
                 required
-                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                 placeholder="Enter admin email"
               />
             </div>
@@ -224,13 +229,13 @@ export default function Auth() {
                   setAdminLogin({ ...adminLogin, password: e.target.value })
                 }
                 required
-                className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                 placeholder="Enter password"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+              <div className="bg-red-50 rounded-lg p-4">
                 <p className="text-red-800 text-sm font-medium">{error}</p>
               </div>
             )}
@@ -276,7 +281,7 @@ export default function Auth() {
       <div className="mt-8 text-center">
         <button
           onClick={() => setCurrentStep("admin-login")}
-          className="text-gray-medium hover:text-green font-medium transition-colors duration-300"
+          className="text-white/75 hover:text-white font-medium transition-colors duration-300"
         >
           Admin Login
         </button>

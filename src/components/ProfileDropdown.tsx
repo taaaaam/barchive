@@ -48,7 +48,7 @@ export default function ProfileDropdown({
       {/* Profile Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-200 group"
+        className="flex items-center space-x-2 text-white hover:text-gray-light transition-colors duration-300 group"
       >
         <span className="font-medium text-lg">Profile</span>
         <svg
@@ -70,12 +70,12 @@ export default function ProfileDropdown({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-green/20 overflow-hidden z-50">
+        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl overflow-hidden z-50">
           {/* Profile Info Header */}
-          <div className="px-4 py-3 bg-green/5 border-b border-green/10">
+          <div className="px-4 py-3 bg-green/5">
             <div className="flex items-center space-x-3">
               {profilePicture ? (
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green/20">
+                <div className="w-10 h-10 rounded-full overflow-hidden">
                   <Image
                     src={profilePicture}
                     alt={username || "Profile"}
@@ -88,7 +88,7 @@ export default function ProfileDropdown({
                   />
                 </div>
               ) : (
-                <div className="w-10 h-10 rounded-full bg-green/10 border-2 border-green/20 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-green/10 flex items-center justify-center">
                   <svg
                     className="w-6 h-6 text-green"
                     fill="none"

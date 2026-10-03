@@ -280,7 +280,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto p-10 bg-white rounded-2xl shadow-2xl border-2 border-green/20">
+      <div className="max-w-6xl mx-auto p-10 bg-white rounded-2xl shadow-2xl">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-medium">Loading members...</p>
@@ -290,11 +290,10 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-10 bg-white rounded-2xl shadow-2xl border-2 border-green/20 relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+    <div className="max-w-6xl mx-auto p-10 bg-white rounded-2xl shadow-2xl relative">
       <div className="relative">
         <div className="text-center mb-8">
-          <div className="inline-block p-4 bg-green/5 rounded-full border-2 border-green/30 mb-6">
+          <div className="inline-block p-4 bg-green/5 rounded-full mb-6">
             <svg
               className="w-10 h-10 text-green"
               fill="currentColor"
@@ -312,7 +311,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Cloudinary Storage Usage */}
-        <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200">
+        <div className="mb-8 p-6 bg-blue-50 rounded-2xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-serif font-bold text-gray-dark flex items-center">
               <i className="fas fa-cloud mr-3 text-blue-600"></i>
@@ -369,7 +368,7 @@ export default function AdminDashboard() {
 
               {/* Objects and Bandwidth */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <div className="p-4 bg-white rounded-lg">
                   <div className="flex items-center mb-2">
                     <i className="fas fa-images text-blue-600 mr-2"></i>
                     <span className="text-sm font-semibold text-gray-dark">
@@ -381,7 +380,7 @@ export default function AdminDashboard() {
                     {cloudinaryUsage.objects.limit.toLocaleString()}
                   </div>
                 </div>
-                <div className="p-4 bg-white rounded-lg border border-blue-200">
+                <div className="p-4 bg-white rounded-lg">
                   <div className="flex items-center mb-2">
                     <i className="fas fa-tachometer-alt text-blue-600 mr-2"></i>
                     <span className="text-sm font-semibold text-gray-dark">
@@ -472,7 +471,7 @@ export default function AdminDashboard() {
         )}
 
         {showAddForm && (
-          <div className="mb-8 p-6 bg-gray-light rounded-lg border-2 border-green/20">
+          <div className="mb-8 p-6 bg-gray-light rounded-lg">
             <h3 className="text-xl font-serif font-bold text-gray-dark mb-4">
               Add New Members
             </h3>
@@ -490,7 +489,7 @@ export default function AdminDashboard() {
                   }}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                   placeholder="Enter names one per line, e.g.&#10;Jack Smith&#10;Harley Davidson&#10;Jane Doe"
                 />
                 <p className="text-sm text-gray-medium mt-1">
@@ -512,7 +511,7 @@ export default function AdminDashboard() {
                         classYear: e.target.value,
                       })
                     }
-                    className="flex-1 px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium"
+                    className="border border-gray-300 focus:border-green flex-1 px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium"
                   >
                     {classYears.map((year) => (
                       <option key={year} value={year}>
@@ -523,7 +522,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowAddClassModal(true)}
-                    className="px-4 py-3 bg-green/10 hover:bg-green/20 border-2 border-green/30 hover:border-green/50 rounded-lg transition-all duration-300 text-green font-semibold"
+                    className="px-4 py-3 bg-green/10 hover:bg-green/20 rounded-lg transition-all duration-300 text-green font-semibold"
                     title="Add new class"
                   >
                     <i className="fas fa-plus"></i>
@@ -533,7 +532,7 @@ export default function AdminDashboard() {
 
               {/* Preview of parsed members */}
               {parsedMembers.length > 0 && (
-                <div className="bg-white p-4 rounded-lg border-2 border-green/20">
+                <div className="bg-white p-4 rounded-lg">
                   <h4 className="text-sm font-semibold text-gray-dark mb-2">
                     Preview ({parsedMembers.length} members):
                   </h4>
@@ -567,7 +566,7 @@ export default function AdminDashboard() {
               All Members ({members.length})
             </h3>
 
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-200">
                 {members.map((member) => (
                   <div
@@ -625,7 +624,7 @@ export default function AdminDashboard() {
               {posts.map((post) => (
                 <div
                   key={post.id}
-                  className="p-6 bg-white rounded-lg border-2 border-green/20 hover:border-green/40 transition-all duration-300"
+                  className="p-6 bg-white rounded-lg transition-all duration-300"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -678,11 +677,10 @@ export default function AdminDashboard() {
         {/* Add New Class Modal */}
         {showAddClassModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 max-w-md w-full p-8 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent rounded-2xl"></div>
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
               <div className="relative">
                 <div className="text-center mb-6">
-                  <div className="inline-block p-3 bg-green/10 rounded-full border-2 border-green/30 mb-4">
+                  <div className="inline-block p-3 bg-green/10 rounded-full mb-4">
                     <i className="fas fa-plus text-green text-xl"></i>
                   </div>
                   <h3 className="text-2xl font-serif font-bold text-gray-dark mb-2">
@@ -704,7 +702,7 @@ export default function AdminDashboard() {
                       onChange={(e) => setNewClassYear(e.target.value)}
                       placeholder="e.g., 2030"
                       required
-                      className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium"
+                      className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium"
                     />
                     {classYears.includes(newClassYear) && newClassYear && (
                       <p className="text-red-600 text-sm mt-1">

@@ -1,14 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import ProfileDropdown from "@/components/ProfileDropdown";
-import MapLink from "@/components/MapLink";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import DelegationClass from "@/components/DelegationClass";
 
 interface Location {
   displayName: string;
@@ -37,6 +35,13 @@ export default function MembersPage() {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showContent, setShowContent] = useState(false);
+  // Class doc id and group photo per class year
+  const [classInfo, setClassInfo] = useState<
+    Record<string, { id: string; groupPhoto?: string }>
+  >({});
+  // The expanded class, if any; all classes start collapsed
+  const [focusedYear, setFocusedYear] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -65,9 +70,21 @@ export default function MembersPage() {
 
   const fetchMembers = async () => {
     try {
-      // Fetch all members without ordering to avoid index requirements
-      const membersQuery = collection(db, "members");
-      const snapshot = await getDocs(membersQuery);
+      // Fetch all members (without ordering to avoid index requirements) and classes
+      const [snapshot, classesSnapshot] = await Promise.all([
+        getDocs(collection(db, "members")),
+        getDocs(collection(db, "classes")),
+      ]);
+
+      const classes: Record<string, { id: string; groupPhoto?: string }> = {};
+      for (const classDoc of classesSnapshot.docs) {
+        const data = classDoc.data();
+        classes[String(data.year)] = {
+          id: classDoc.id,
+          groupPhoto: data.groupPhoto || undefined,
+        };
+      }
+      setClassInfo(classes);
 
       const membersData: Member[] = [];
       const claimedUserIds = new Set<string>();
@@ -169,27 +186,67 @@ export default function MembersPage() {
   const classYears = Object.keys(membersByClass).sort((a, b) =>
     b.localeCompare(a)
   );
+  // Clicking or tapping outside the expanded class (or pressing Escape) collapses it
+  useEffect(() => {
+    if (!focusedYear) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      const section = sectionRefs.current[focusedYear];
+      if (section && e.target instanceof Node && !section.contains(e.target)) {
+        setFocusedYear(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFocusedYear(null);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [focusedYear]);
+
+  const expandClass = (year: string) => {
+    setFocusedYear(year);
+    // Once the expand animation settles, make sure the class is in view
+    window.setTimeout(() => {
+      sectionRefs.current[year]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 520);
+  };
+
+  const saveGroupPhoto = async (year: string, url: string) => {
+    // Older class docs have random IDs; new ones use the year as the ID
+    const id = classInfo[year]?.id ?? year;
+    await setDoc(
+      doc(db, "classes", id),
+      { year, groupPhoto: url, groupPhotoUpdatedAt: new Date() },
+      { merge: true }
+    );
+    setClassInfo((prev) => ({ ...prev, [year]: { id, groupPhoto: url } }));
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white flex items-center justify-center">
+      <div className="min-h-screen bg-green flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-green border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-medium">Loading members...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <p className="text-white/75">Loading members...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
       <header
-        className={`bg-green shadow-2xl border-b-4 border-green-light relative transition-opacity duration-500 ${
+        className={`page-header-enter bg-green relative transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
         <div className="relative max-w-7xl mx-auto px-8 py-8">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -213,206 +270,68 @@ export default function MembersPage() {
                 Back to Home
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/memories"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Memories
-              </Link>
-              <MapLink />
-              <Link
-                href="/newsletters"
-                className="text-white hover:text-gray-light font-medium text-lg transition-colors duration-300"
-              >
-                Newsletters
-              </Link>
-              {userProfile && (
-                <ProfileDropdown
-                  username={userProfile.username}
-                  profilePicture={userProfile.profilePicture}
-                  isAdmin={userProfile.isAdmin}
-                />
-              )}
-            </div>
           </div>
           <div className="text-center mt-8">
             <h1 className="text-5xl font-serif font-bold text-white mb-4">
               Delegations
             </h1>
-            <p className="text-white/80 text-xl font-light mb-6">
+            <p className="text-white/80 text-xl font-light">
               Connect with fellow society members across all class years
             </p>
-            <a
-              href="https://docs.google.com/spreadsheets/d/1rilUXKw-u8cStAAnPhq9q0UmdDZsgL8AFkakjjCmbBA/edit?usp=sharing"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/30 hover:border-white/50 rounded-lg transition-all duration-300 text-white font-semibold backdrop-blur-sm"
-            >
-              <i className="fas fa-external-link-alt mr-3"></i>
-              View Member Spreadsheet
-            </a>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main
-        className={`max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
+        className={`page-main-enter max-w-7xl mx-auto px-8 py-12 transition-opacity duration-500 ${
           showContent ? "opacity-100" : "opacity-0"
         }`}
       >
         <div className="mb-8">
-          <h2 className="text-3xl font-serif font-bold text-gray-dark mb-2">
+          <h2 className="text-3xl font-serif font-bold text-white mb-2">
             All Members ({members.length})
           </h2>
-          <p className="text-gray-medium">Organized by graduation year</p>
+          <p className="text-white/75">Organized by graduation year</p>
         </div>
 
         {classYears.length > 0 ? (
-          <div className="space-y-12">
+          <div className="space-y-4">
             {classYears.map((classYear) => (
-              <div
+              <DelegationClass
                 key={classYear}
-                className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 p-8"
-              >
-                <div className="mb-6">
-                  <h3 className="text-2xl font-serif font-bold text-gray-dark mb-2">
-                    Class of {classYear}
-                  </h3>
-                  <p className="text-gray-medium">
-                    {membersByClass[classYear].length} member
-                    {membersByClass[classYear].length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {membersByClass[classYear].map((member) => (
-                    <Link
-                      key={member.id}
-                      href={`/members/${member.id}`}
-                      className="group bg-gray-light hover:bg-green/5 rounded-xl p-6 border-2 border-gray-light hover:border-green/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                    >
-                      <div className="text-center">
-                        <div className="mb-4">
-                          {member.profilePicture ? (
-                            <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-3 border-green/20">
-                              <Image
-                                src={member.profilePicture}
-                                alt={`${member.firstName} ${member.lastName}`}
-                                width={80}
-                                height={80}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = "none";
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-20 h-20 mx-auto rounded-full bg-green/10 border-3 border-green/20 flex items-center justify-center">
-                              <svg
-                                className="w-10 h-10 text-green"
-                                fill="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path d="M12,4A4,4 0 0,0 8,8A4,4 0 0,0 12,12A4,4 0 0,0 16,8A4,4 0 0,0 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        <h4 className="font-serif font-bold text-gray-dark mb-1 group-hover:text-green transition-colors">
-                          {member.firstName} {member.lastName}
-                        </h4>
-                        {member.username && (
-                          <p className="text-sm text-gray-medium mb-2">
-                            @{member.username}
-                          </p>
-                        )}
-                        {(member.hometown || member.currentLocation) && (
-                          <div className="space-y-1 mb-2">
-                            {member.hometown && (
-                              <div className="flex items-center justify-center space-x-1">
-                                <svg
-                                  className="w-3 h-3 text-green"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                                  />
-                                </svg>
-                                <span className="text-xs text-gray-medium">
-                                  {member.hometown}
-                                </span>
-                              </div>
-                            )}
-                            {member.currentLocation && (
-                              <div className="flex items-center justify-center space-x-1">
-                                <svg
-                                  className="w-3 h-3 text-green"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                                <span className="text-xs text-gray-medium">
-                                  {typeof member.currentLocation === "object" && member.currentLocation !== null
-                                    ? member.currentLocation.displayName || "Unknown Location"
-                                    : member.currentLocation}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        <div className="flex items-center justify-center">
-                          {member.isClaimed ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green text-white">
-                              Active Member
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                              Available
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+                ref={(el) => {
+                  sectionRefs.current[classYear] = el;
+                }}
+                classYear={classYear}
+                members={membersByClass[classYear]}
+                groupPhoto={classInfo[classYear]?.groupPhoto}
+                focused={focusedYear === classYear}
+                canEditPhoto={
+                  !!userProfile &&
+                  (userProfile.isAdmin ||
+                    String(userProfile.classYear) === classYear)
+                }
+                onFocusRequest={() => expandClass(classYear)}
+                onGroupPhotoChange={(url) => saveGroupPhoto(classYear, url)}
+              />
             ))}
           </div>
         ) : (
           <div className="text-center py-20">
-            <div className="inline-block p-6 bg-green/5 rounded-full border-2 border-green/20 mb-6">
+            <div className="inline-block p-6 bg-white/10 rounded-full mb-6">
               <svg
-                className="w-16 h-16 text-green"
+                className="w-16 h-16 text-white"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path d="M12,4A4,4 0 0,0 8,8A4,4 0 0,0 12,12A4,4 0 0,0 16,8A4,4 0 0,0 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-serif font-bold text-gray-dark mb-4">
+            <h3 className="text-2xl font-serif font-bold text-white mb-4">
               No Members Found
             </h3>
-            <p className="text-gray-medium mb-8 max-w-md mx-auto">
+            <p className="text-white/75 mb-8 max-w-md mx-auto">
               No members have been added to the society yet. Contact an admin to
               add members.
             </p>

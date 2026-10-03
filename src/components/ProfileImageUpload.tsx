@@ -89,7 +89,7 @@ export default function ProfileImageUpload({
       {currentImage ? (
         <div className="space-y-3">
           <div className="relative w-48 h-48">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-green/20">
+            <div className="w-48 h-48 rounded-full overflow-hidden">
               <img
                 src={currentImage}
                 alt="Profile picture"
@@ -100,7 +100,7 @@ export default function ProfileImageUpload({
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg border-2 border-white"
+                className="absolute -top-2 -right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
               >
                 <svg
                   className="w-4 h-4"
@@ -125,10 +125,10 @@ export default function ProfileImageUpload({
       ) : (
         <div className="space-y-3">
           <div
-            className={`w-48 h-48 border-2 border-dashed border-green/30 rounded-full flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${
+            className={`bg-gray-50 w-48 h-48 rounded-full flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${
               disabled
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:border-green/50 hover:bg-green/5"
+                : "hover:bg-green/5"
             }`}
             onClick={() => !disabled && fileInputRef.current?.click()}
           >
@@ -180,7 +180,7 @@ export default function ProfileImageUpload({
       )}
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3">
+        <div className="bg-red-50 rounded-lg p-3">
           <p className="text-red-800 text-sm font-medium">{error}</p>
         </div>
       )}

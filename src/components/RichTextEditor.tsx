@@ -142,12 +142,12 @@ export default function RichTextEditor({
 
   return (
     <div
-      className={`border-2 rounded-lg transition-colors ${
-        isFocused ? "border-green ring-2 ring-green/20" : "border-green/30"
+      className={`rounded-lg transition-colors ${
+        isFocused ? "ring-2 ring-green/20" : ""
       } ${className}`}
     >
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+      <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-50 rounded-t-lg">
         {/* Bold */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -277,7 +277,7 @@ export default function RichTextEditor({
       </div>
 
       {/* Help Text */}
-      <div className="px-4 py-2 bg-gray-50 rounded-b-lg border-t border-gray-100">
+      <div className="px-4 py-2 bg-gray-50 rounded-b-lg">
         <p className="text-sm text-gray-600">
           💡 <strong>Keyboard shortcuts:</strong> Bold (Ctrl+B), Italic
           (Ctrl+I), Undo (Ctrl+Z), Redo (Ctrl+Y)

@@ -91,7 +91,7 @@ export default function ImageUpload({
             <img
               src={currentImage}
               alt="Featured image"
-              className="w-full h-64 object-cover rounded-lg border-2 border-green/20"
+              className="w-full h-64 object-cover rounded-lg"
             />
             {!disabled && (
               <button
@@ -122,10 +122,10 @@ export default function ImageUpload({
       ) : (
         <div className="space-y-4">
           <div
-            className={`border-2 border-dashed border-green/30 rounded-lg p-8 text-center transition-colors ${
+            className={`bg-gray-50 rounded-lg p-8 text-center transition-colors ${
               disabled
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:border-green/50 cursor-pointer"
+                : "cursor-pointer"
             }`}
             onClick={() => !disabled && fileInputRef.current?.click()}
           >
@@ -177,7 +177,7 @@ export default function ImageUpload({
       )}
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 rounded-lg p-4">
           <p className="text-red-800 text-sm font-medium">{error}</p>
         </div>
       )}

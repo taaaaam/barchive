@@ -72,13 +72,12 @@ export default function CreatePost() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-light to-white">
+    <div className="min-h-screen bg-green">
       {/* Header */}
-      <header className="bg-green shadow-2xl border-b-4 border-green-light relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-green via-green-dark to-green opacity-90"></div>
+      <header className="page-header-enter bg-green relative">
         <div className="relative max-w-7xl mx-auto px-8 py-12">
           <Link
-            href="/"
+            href="/chronicles"
             className="inline-flex items-center text-white hover:text-gray-light font-serif font-semibold text-lg transition-all duration-300 mb-6 group"
           >
             <svg
@@ -108,9 +107,8 @@ export default function CreatePost() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-green/5 to-transparent"></div>
+      <main className="page-main-enter max-w-4xl mx-auto px-6 py-12">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden relative">
           <div className="relative px-8 py-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Title Field */}
@@ -127,7 +125,7 @@ export default function CreatePost() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium transition-colors"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium transition-colors"
                   placeholder="Enter your post title..."
                 />
               </div>
@@ -145,7 +143,7 @@ export default function CreatePost() {
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
                   rows={3}
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark placeholder-gray-medium font-medium transition-colors resize-none"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark placeholder-gray-medium font-medium transition-colors resize-none"
                   placeholder="Brief description of your post (optional)..."
                 />
               </div>
@@ -175,13 +173,13 @@ export default function CreatePost() {
               </div>
 
               {/* Private Post Checkbox */}
-              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border-2 border-green/20">
+              <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                 <input
                   type="checkbox"
                   id="private"
                   checked={isPrivate}
                   onChange={(e) => setIsPrivate(e.target.checked)}
-                  className="w-5 h-5 text-green border-green/30 rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
+                  className="border border-gray-300 focus:border-green w-5 h-5 text-green rounded focus:ring-2 focus:ring-green focus:ring-offset-2 cursor-pointer"
                 />
                 <label
                   htmlFor="private"
@@ -193,7 +191,7 @@ export default function CreatePost() {
 
               {/* Error Message */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="bg-red-50 rounded-lg p-4">
                   <p className="text-red-800">{error}</p>
                 </div>
               )}
@@ -234,8 +232,8 @@ export default function CreatePost() {
                   )}
                 </button>
                 <Link
-                  href="/"
-                  className="px-6 py-3 border-2 border-green/30 text-green font-semibold rounded-lg hover:bg-green/10 transition-colors duration-200"
+                  href="/chronicles"
+                  className="px-6 py-3 text-green font-semibold rounded-lg hover:bg-green/10 transition-colors duration-200"
                 >
                   Cancel
                 </Link>

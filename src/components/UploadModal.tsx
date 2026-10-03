@@ -39,9 +39,9 @@ export default function UploadModal({
 
       {/* Modal Content */}
       <div className="relative z-10 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="bg-white rounded-2xl shadow-2xl border-2 border-green/20">
+        <div className="bg-white rounded-2xl shadow-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-green/20">
+          <div className="flex items-center justify-between p-6">
             <h2 className="text-2xl font-serif font-bold text-gray-dark">
               Add Photos to Memory
             </h2>
@@ -71,7 +71,6 @@ export default function UploadModal({
             <MultiImageUpload
               onImagesUpload={handleImagesUpload}
               disabled={isUploading || uploading}
-              maxImages={20}
               stagingMode={true}
             />
 
@@ -88,7 +87,7 @@ export default function UploadModal({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end space-x-3 p-6 border-t border-green/20">
+          <div className="flex justify-end space-x-3 p-6">
             <button
               onClick={onClose}
               disabled={isUploading || uploading}

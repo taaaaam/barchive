@@ -156,7 +156,7 @@ export default function Comments({ postId }: CommentsProps) {
     return (
       <div className="mt-16">
         <div className="flex justify-center items-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-green border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
         </div>
       </div>
     );
@@ -164,7 +164,7 @@ export default function Comments({ postId }: CommentsProps) {
 
   return (
     <div className="mt-16">
-      <div className="bg-white rounded-2xl shadow-xl border-2 border-green/20 p-8">
+      <div className="bg-white rounded-2xl shadow-xl p-8">
         <h2 className="text-3xl font-serif font-bold text-gray-dark mb-8">
           Comments ({comments.length})
         </h2>
@@ -210,7 +210,7 @@ export default function Comments({ postId }: CommentsProps) {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Share your thoughts..."
-                  className="w-full px-4 py-3 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                  className="border border-gray-300 focus:border-green w-full px-4 py-3 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                   rows={3}
                   required
                 />
@@ -227,7 +227,7 @@ export default function Comments({ postId }: CommentsProps) {
             </div>
           </form>
         ) : (
-          <div className="mb-8 p-6 bg-green/5 rounded-lg border-2 border-green/20 text-center">
+          <div className="mb-8 p-6 bg-green/5 rounded-lg text-center">
             <p className="text-gray-dark mb-4">
               Please{" "}
               <button
@@ -245,7 +245,7 @@ export default function Comments({ postId }: CommentsProps) {
         <div className="space-y-6">
           {comments.length === 0 ? (
             <div className="text-center py-12">
-              <div className="inline-block p-4 bg-green/5 rounded-full border-2 border-green/20 mb-4">
+              <div className="inline-block p-4 bg-green/5 rounded-full mb-4">
                 <svg
                   className="w-8 h-8 text-green"
                   fill="none"
@@ -268,7 +268,7 @@ export default function Comments({ postId }: CommentsProps) {
             comments.map((comment) => (
               <div
                 key={comment.id}
-                className="border-b border-gray-200 pb-6 last:border-b-0"
+                className="pb-6"
               >
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
@@ -364,7 +364,7 @@ export default function Comments({ postId }: CommentsProps) {
                         <textarea
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full px-3 py-2 border-2 border-green/30 rounded-lg focus:ring-2 focus:ring-green focus:border-green bg-white text-gray-dark font-medium resize-none"
+                          className="border border-gray-300 focus:border-green w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-green bg-white text-gray-dark font-medium resize-none"
                           rows={2}
                         />
                         <div className="flex gap-2">

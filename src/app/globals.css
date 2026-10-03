@@ -88,6 +88,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* Always reserve the scrollbar's space, so centred content doesn't shift
+     sideways when a page grows tall enough to scroll (e.g. after loading) */
+  scrollbar-gutter: stable;
 }
 
 html,
@@ -222,4 +225,286 @@ a {
 .prose p:empty {
   margin-bottom: 1rem;
   min-height: 1.5rem;
+}
+
+/* Shutter flash on the homepage camera viewer */
+@keyframes camera-flash {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.camera-flash {
+  animation: camera-flash 250ms ease-out forwards;
+}
+
+/* Newsletter spread: caption fades up when a different issue is hovered */
+@keyframes newsletter-caption-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.newsletter-caption {
+  animation: newsletter-caption-in 300ms ease-out;
+}
+
+/* Signed-out homepage: the crest slowly surfaces, then "Enter" appears */
+@keyframes home-crest-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes home-enter-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.5em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.2em;
+  }
+}
+
+.home-crest {
+  animation: home-crest-in 1.6s ease-out both;
+}
+
+.home-enter {
+  animation: home-enter-in 1.2s ease-out 1.2s both;
+}
+
+/* Login class timeline: the line draws in, then the year nodes pop up in turn */
+@keyframes timeline-draw-x {
+  from {
+    transform: translateY(-50%) scaleX(0);
+  }
+  to {
+    transform: translateY(-50%) scaleX(1);
+  }
+}
+
+@keyframes timeline-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes timeline-node-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.timeline-line {
+  transform-origin: left center;
+  animation: timeline-draw-x 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.timeline-line-vertical {
+  transform-origin: top center;
+  animation: timeline-draw-y 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.timeline-node {
+  /* backwards, not both: holding the final keyframe would block the
+     opacity/scale transitions used when a year is chosen */
+  animation: timeline-node-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* Homepage entrance after logging in (the logo glide is done in JS) */
+@keyframes intro-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes intro-camera-rise {
+  from {
+    opacity: 0;
+    transform: translateY(45vh) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.home-intro .intro-title {
+  animation: intro-drop-in 700ms cubic-bezier(0.22, 1, 0.36, 1) 700ms both;
+}
+
+.home-intro .intro-nav > *,
+.home-intro .intro-nav-right > * {
+  animation: intro-drop-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-intro .intro-nav > :nth-child(1) { animation-delay: 850ms; }
+.home-intro .intro-nav > :nth-child(2) { animation-delay: 930ms; }
+.home-intro .intro-nav > :nth-child(3) { animation-delay: 1010ms; }
+.home-intro .intro-nav > :nth-child(4) { animation-delay: 1090ms; }
+.home-intro .intro-nav > :nth-child(5) { animation-delay: 1170ms; }
+.home-intro .intro-nav-right > :nth-child(1) { animation-delay: 1170ms; }
+.home-intro .intro-nav-right > :nth-child(2) { animation-delay: 1250ms; }
+
+.home-intro .intro-camera {
+  animation: intro-camera-rise 1100ms cubic-bezier(0.34, 1.25, 0.64, 1) 1000ms both;
+}
+
+/* Page entrances: each page's header drops in as it opens, and its main content
+   rises into place when it appears (after loading, on pages that fetch data).
+   fill-mode "backwards" leaves no transform behind afterwards, so fixed-position
+   modals inside still cover the whole screen. */
+@keyframes page-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes page-main-in {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-header-enter {
+  animation: page-header-in 600ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.page-main-enter {
+  animation: page-main-in 800ms cubic-bezier(0.22, 1, 0.36, 1) 120ms backwards;
+}
+
+/* Choosing a class: the chosen node ripples, the timeline card lifts away,
+   and the member list card rises in with its rows cascading */
+@keyframes node-ripple {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
+
+@keyframes class-card-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.97);
+  }
+}
+
+@keyframes member-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes member-heading-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes member-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.node-ripple {
+  animation: node-ripple 700ms ease-out forwards;
+}
+
+.class-card-leave {
+  animation: class-card-leave 350ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.member-card-enter {
+  animation: member-card-in 550ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.member-heading-enter {
+  animation: member-heading-in 600ms cubic-bezier(0.22, 1, 0.36, 1) 150ms backwards;
+}
+
+.member-row-enter {
+  animation: member-row-in 450ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-ripple,
+  .class-card-leave,
+  .member-card-enter,
+  .member-heading-enter,
+  .member-row-enter,
+  .page-header-enter,
+  .page-main-enter,
+  .home-intro *,
+  .home-crest,
+  .home-enter,
+  .timeline-line,
+  .timeline-line-vertical,
+  .timeline-node,
+  .newsletter-caption {
+    animation: none !important;
+  }
 }
