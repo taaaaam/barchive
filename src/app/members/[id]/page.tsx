@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Polaroid, { handwriting } from "@/components/Polaroid";
 
 interface Location {
   displayName: string;
@@ -106,6 +107,12 @@ export default function MemberPage({
     }
   };
 
+  const currentLocationText = !member
+    ? ""
+    : typeof member.currentLocation === "object" && member.currentLocation !== null
+    ? member.currentLocation.displayName || ""
+    : member.currentLocation || "";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-green">
@@ -179,188 +186,48 @@ export default function MemberPage({
       </header>
 
       {/* Main Content */}
-      <main className="page-main-enter max-w-4xl mx-auto px-8 py-12">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Profile Section */}
-          <div className="p-8">
-            <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-              {/* Profile Picture */}
-              <div className="flex-shrink-0">
-                {member.profilePicture ? (
-                  <div className="relative w-48 h-48 rounded-full overflow-hidden">
-                    <Image
-                      src={member.profilePicture}
-                      alt={`${member.firstName} ${member.lastName}`}
-                      fill
-                      className="object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-48 h-48 rounded-full bg-green/10 flex items-center justify-center">
-                    <svg
-                      className="w-24 h-24 text-green"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </div>
+      <main className="page-main-enter max-w-5xl mx-auto px-6 md:px-8 py-12 md:py-16">
+        <div className="flex flex-col md:flex-row items-center md:items-start justify-center gap-14 md:gap-16">
+          {/* Polaroid, pinned up */}
+          <div className="profile-polaroid relative w-64 sm:w-72 flex-shrink-0 -rotate-3">
+            <Polaroid
+              src={member.profilePicture}
+              alt={`${member.firstName} ${member.lastName}`}
+              caption={`${member.firstName} ${member.lastName}`}
+              sizes="288px"
+              priority
+              className="drop-shadow-[0_18px_22px_rgba(0,0,0,0.35)]"
+            />
+            <Image
+              src="/assets/pushpin.png"
+              alt=""
+              width={180}
+              height={180}
+              className="profile-pin absolute -top-4 left-1/2 -ml-5 w-10 h-10 select-none pointer-events-none drop-shadow-[2px_5px_3px_rgba(0,0,0,0.45)]"
+            />
+          </div>
 
-              {/* Member Info */}
-              <div className="flex-1 text-center md:text-left">
-                <h2 className="text-3xl font-serif font-bold text-gray-dark mb-4">
-                  {member.firstName} {member.lastName}
-                </h2>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center md:justify-start space-x-2">
-                    <svg
-                      className="w-5 h-5 text-green"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span className="text-lg text-gray-dark font-medium">
-                      Class of {member.classYear}
-                    </span>
-                  </div>
-
-                  {member.email && (
-                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                      <svg
-                        className="w-5 h-5 text-green"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                        />
-                      </svg>
-                      <span className="text-lg text-gray-dark font-medium">
-                        {member.email}
-                      </span>
-                    </div>
-                  )}
-
-                  {member.username && (
-                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                      <svg
-                        className="w-5 h-5 text-green"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      <span className="text-lg text-gray-dark font-medium">
-                        @{member.username}
-                      </span>
-                    </div>
-                  )}
-
-                  {member.hometown && (
-                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                      <svg
-                        className="w-5 h-5 text-green"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                        />
-                      </svg>
-                      <span className="text-lg text-gray-dark font-medium">
-                        {member.hometown}
-                      </span>
-                    </div>
-                  )}
-
-                  {member.currentLocation && (
-                    <div className="flex items-center justify-center md:justify-start space-x-2">
-                      <svg
-                        className="w-5 h-5 text-green"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span className="text-lg text-gray-dark font-medium">
-                        {typeof member.currentLocation === "object" && member.currentLocation !== null
-                          ? member.currentLocation.displayName || "Unknown Location"
-                          : member.currentLocation}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-center md:justify-start space-x-2">
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        member.isClaimed ? "bg-green" : "bg-gray-400"
-                      }`}
-                    ></div>
-                    <span className="text-lg text-gray-dark font-medium">
-                      {member.isClaimed
-                        ? "Profile Claimed"
-                        : "Profile Available"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+          {/* Sticky note with the details, handwritten */}
+          <div
+            className={`profile-note ${handwriting.className} relative w-80 sm:w-[22rem] min-h-[22rem] rotate-2 px-8 pt-8 pb-10 text-gray-800 drop-shadow-[0_14px_18px_rgba(0,0,0,0.3)]`}
+            style={{
+              backgroundImage: "url(/assets/sticky-note.webp)",
+              backgroundSize: "100% 100%",
+            }}
+          >
+            <p className="text-4xl leading-tight">Class of {member.classYear}</p>
+            <div className="mt-3 space-y-1 text-2xl leading-snug">
+              {member.username && <p>@{member.username}</p>}
+              {member.hometown && <p>from {member.hometown}</p>}
+              {currentLocationText && <p>now in {currentLocationText}</p>}
+              {member.email && (
+                <p className="text-xl break-all">{member.email}</p>
+              )}
             </div>
-
-            {/* Bio Section */}
             {member.bio && (
-              <div className="mt-8 pt-8">
-                <h3 className="text-2xl font-serif font-bold text-gray-dark mb-4">
-                  About
-                </h3>
-                <p className="text-gray-medium leading-relaxed text-lg">
-                  {member.bio}
-                </p>
-              </div>
+              <p className="mt-5 text-2xl leading-snug whitespace-pre-line">
+                {member.bio}
+              </p>
             )}
           </div>
         </div>

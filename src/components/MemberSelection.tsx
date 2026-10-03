@@ -28,16 +28,29 @@ interface Member {
   username?: string;
 }
 
+export interface ClaimedAccount {
+  uid: string;
+  memberId: string;
+  firstName: string;
+}
+
 interface MemberSelectionProps {
   classYear: string;
   onBack: () => void;
   onLoginSuccess: () => void;
+  // Claim lifecycle, so the parent can hold its redirect and show profile setup
+  onClaimStart?: () => void;
+  onClaimed?: (account: ClaimedAccount) => void;
+  onClaimFailed?: () => void;
 }
 
 export default function MemberSelection({
   classYear,
   onBack,
   onLoginSuccess,
+  onClaimStart,
+  onClaimed,
+  onClaimFailed,
 }: MemberSelectionProps) {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,6 +202,7 @@ export default function MemberSelection({
     }
 
     setIsClaiming(true);
+    onClaimStart?.();
 
     try {
       // Create Firebase Auth account
@@ -219,9 +233,18 @@ export default function MemberSelection({
         createdAt: new Date(),
       });
 
-      onLoginSuccess();
+      if (onClaimed) {
+        onClaimed({
+          uid: userCredential.user.uid,
+          memberId: selectedMember.id,
+          firstName: selectedMember.firstName,
+        });
+      } else {
+        onLoginSuccess();
+      }
     } catch (error: any) {
       console.error("Error claiming account:", error);
+      onClaimFailed?.();
       setError(error.message);
     } finally {
       setIsClaiming(false);

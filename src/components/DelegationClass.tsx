@@ -97,16 +97,6 @@ const DelegationClass = forwardRef<HTMLElement, DelegationClassProps>(
                     {members.length} member{members.length !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-gray-medium">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" />
-                    Active
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                    Not yet joined
-                  </span>
-                </div>
               </div>
 
               <div className="flex flex-col-reverse lg:flex-row gap-8">

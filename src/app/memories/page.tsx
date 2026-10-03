@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   collection,
   getDocs,
@@ -16,6 +15,7 @@ import {
 import { db, auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import Polaroid from "@/components/Polaroid";
 import { getDoc } from "firebase/firestore";
 
 interface Memory {
@@ -28,6 +28,20 @@ interface Memory {
   createdAt: any;
   authorId: string;
   authorName: string;
+}
+
+// Deterministic "random" tilts for a memory's polaroid stack, from its ID
+function stackTilts(id: string) {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0;
+  const rand = (shift: number) => (Math.abs(h >> shift) % 1000) / 1000;
+  return {
+    top: (rand(0) - 0.5) * 8, // -4..4deg
+    back: [
+      { r: 9 + rand(3) * 7, x: 22 + rand(5) * 10, y: 6 }, // tilted right
+      { r: -(8 + rand(7) * 7), x: -(20 + rand(9) * 10), y: 10 }, // tilted left
+    ],
+  };
 }
 
 export default function MemoriesPage() {
@@ -626,15 +640,18 @@ export default function MemoriesPage() {
         )}
 
         {/* Memories Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredMemories.map((memory) => (
-            <div
-              key={memory.id}
-              className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group hover:-translate-y-1 relative"
-            >
+        <div className="grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredMemories.map((memory) => {
+            const tilt = stackTilts(memory.id);
+            const backPhotos =
+              memory.photos.length >= 3
+                ? [memory.photos[2], memory.photos[1]]
+                : [memory.photos[1]];
+            return (
+            <div key={memory.id} className="group relative">
               {/* Edit/Delete buttons for memory publisher */}
               {user && memory.authorId === user.uid && (
-                <div className="absolute top-3 right-3 z-20 flex gap-1">
+                <div className="absolute top-3 right-3 z-30 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={(e) => {
                       e.preventDefault();
@@ -689,107 +706,63 @@ export default function MemoriesPage() {
                 </div>
               )}
 
-              <Link href={`/memories/${memory.id}`} className="relative block">
-                {/* Cover Image */}
-                <div className="aspect-square relative bg-gray-100">
-                  {memory.photos.length > 0 ? (
-                    <img
+              <Link href={`/memories/${memory.id}`} className="block px-6 pt-6">
+                {/* A little stack of polaroids: the album's next photos behind,
+                    the cover on top. Tilts come from the memory's ID so they
+                    stay the same between visits; hovering fans the stack out. */}
+                <div className="relative">
+                  {backPhotos.map((photo, i) => (
+                    <div
+                      key={i}
+                      className="absolute inset-0 transition-transform duration-500 ease-out [transform:rotate(var(--r))_translate(var(--x),var(--y))] group-hover:[transform:rotate(calc(var(--r)*1.7))_translate(calc(var(--x)*1.8),var(--y))]"
+                      style={
+                        {
+                          "--r": `${tilt.back[i].r}deg`,
+                          "--x": `${tilt.back[i].x}px`,
+                          "--y": `${tilt.back[i].y}px`,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <Polaroid
+                        src={photo}
+                        sizes="(min-width: 1280px) 240px, (min-width: 640px) 45vw, 90vw"
+                        className="drop-shadow-[0_8px_10px_rgba(0,0,0,0.3)]"
+                      />
+                    </div>
+                  ))}
+                  <div
+                    className="relative transition-transform duration-500 ease-out [transform:rotate(var(--r))] group-hover:[transform:rotate(calc(var(--r)*0.4))_translateY(-8px)_scale(1.03)]"
+                    style={{ "--r": `${tilt.top}deg` } as React.CSSProperties}
+                  >
+                    <Polaroid
                       src={memory.photos[0]}
                       alt={memory.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      caption={memory.title}
+                      captionClassName="text-2xl"
+                      sizes="(min-width: 1280px) 240px, (min-width: 640px) 45vw, 90vw"
+                      className="drop-shadow-[0_12px_14px_rgba(0,0,0,0.35)]"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-green/5">
-                      <div className="text-center">
-                        <svg
-                          className="w-12 h-12 text-green/60 mx-auto mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <p className="text-sm text-green/60 font-medium">
-                          No Photos
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Photo count badge */}
-                  {memory.photos.length > 1 && (
-                    <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                      +{memory.photos.length - 1} more
-                    </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Bottom overlay with metadata */}
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4">
-                  <div className="text-white">
-                    <h3 className="font-semibold text-lg mb-1 line-clamp-1 group-hover:text-green-300 transition-colors">
-                      {memory.title}
-                    </h3>
-
-                    {memory.description && (
-                      <p className="text-sm text-gray-200 line-clamp-2 mb-2">
-                        {memory.description}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="bg-green/20 text-green-300 px-2 py-1 rounded-full font-medium">
-                        Class of {memory.classYear}
-                      </span>
-
-                      <div className="flex items-center gap-3 text-gray-300">
-                        <span className="flex items-center gap-1">
-                          <svg
-                            className="w-3 h-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                          {memory.photos.length}
-                        </span>
-
-                        {memory.links && memory.links.length > 0 && (
-                          <span className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                              />
-                            </svg>
-                            {memory.links.length}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                <div className="relative z-10 mt-12 text-center">
+                  <p className="text-sm text-white/80">
+                    Class of {memory.classYear} · {memory.photos.length} photo
+                    {memory.photos.length !== 1 ? "s" : ""}
+                    {memory.links && memory.links.length > 0
+                      ? ` · ${memory.links.length} link${memory.links.length !== 1 ? "s" : ""}`
+                      : ""}
+                  </p>
+                  {memory.description && (
+                    <p className="mt-1 text-sm text-white/60 line-clamp-2">
+                      {memory.description}
+                    </p>
+                  )}
                 </div>
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {filteredMemories.length === 0 && (

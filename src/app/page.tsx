@@ -9,12 +9,13 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
+import { db, auth, ADMIN_EMAIL } from "@/lib/firebase";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import MapLink from "@/components/MapLink";
 import CameraViewer from "@/components/CameraViewer";
+import HandwrittenText from "@/components/HandwrittenText";
 import { useRouter } from "next/navigation";
 import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
@@ -111,6 +112,10 @@ export default function Home() {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           setUserProfile(userDoc.data());
+        } else if (user.email !== ADMIN_EMAIL) {
+          // Signed in to an account whose profile no longer exists (e.g. it
+          // was deleted): sign out rather than waiting forever for a profile
+          await signOut(auth);
         }
       } else {
         setUserProfile(null);
@@ -249,7 +254,7 @@ export default function Home() {
                 }`}
               />
               <h1 className="intro-title text-2xl font-serif font-bold text-white">
-                The BaRchive
+                <HandwrittenText text="The BaRchive" />
               </h1>
             </div>
 
@@ -306,7 +311,7 @@ export default function Home() {
                 }`}
               />
               <h1 className="intro-title text-2xl font-serif font-bold text-white">
-                The BaRchive
+                <HandwrittenText text="The BaRchive" />
               </h1>
             </div>
 

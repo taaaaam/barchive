@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { auth, db, ADMIN_EMAIL } from "@/lib/firebase";
 import {
   signOut,
@@ -11,7 +11,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ClassSelection from "./ClassSelection";
-import MemberSelection from "./MemberSelection";
+import MemberSelection, { ClaimedAccount } from "./MemberSelection";
+import ProfileSetup from "./ProfileSetup";
 import AdminDashboard from "./AdminDashboard";
 import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
@@ -29,6 +30,9 @@ export default function Auth() {
   });
   const [error, setError] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  // A new account is being claimed ("pending") or was just claimed and is
+  // going through the optional profile setup; hold the home redirect meanwhile
+  const [claim, setClaim] = useState<null | "pending" | ClaimedAccount>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -90,22 +94,27 @@ export default function Auth() {
     return () => unsubscribe();
   }, []);
 
+  // Regular users go to the home page, which plays its intro animation
+  const goHome = useCallback(() => {
+    try {
+      sessionStorage.setItem(HOME_INTRO_KEY, "1");
+    } catch {
+      // Storage unavailable (e.g. private mode); just skip the intro
+    }
+    router.push("/");
+  }, [router]);
+
   // Handle redirects in useEffect to avoid render-time navigation
   useEffect(() => {
+    if (claim) return; // claiming / profile setup in progress
     if (user && userProfile) {
       if (userProfile.isAdmin) {
         router.push("/admin");
       } else {
-        // Regular user - redirect to home page, which plays its intro animation
-        try {
-          sessionStorage.setItem(HOME_INTRO_KEY, "1");
-        } catch {
-          // Storage unavailable (e.g. private mode); just skip the intro
-        }
-        router.push("/");
+        goHome();
       }
     }
-  }, [user, userProfile, router]);
+  }, [user, userProfile, router, claim, goHome]);
 
   const handleClassSelected = (classYear: string) => {
     setSelectedClass(classYear);
@@ -157,6 +166,18 @@ export default function Auth() {
     }
   };
 
+  // Just claimed an account: optional profile questions before heading home
+  if (claim && claim !== "pending") {
+    return (
+      <ProfileSetup
+        uid={claim.uid}
+        memberId={claim.memberId}
+        firstName={claim.firstName}
+        onDone={goHome}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-4">
@@ -165,7 +186,7 @@ export default function Auth() {
     );
   }
 
-  if (user && userProfile) {
+  if (user && userProfile && !claim) {
     // Show loading while redirecting (both admin and regular users)
     return (
       <div className="flex items-center justify-center p-4">
@@ -268,6 +289,9 @@ export default function Auth() {
         classYear={selectedClass}
         onBack={handleBackToClass}
         onLoginSuccess={handleLoginSuccess}
+        onClaimStart={() => setClaim("pending")}
+        onClaimed={setClaim}
+        onClaimFailed={() => setClaim(null)}
       />
     );
   }
