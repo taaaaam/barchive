@@ -17,6 +17,7 @@ import MapLink from "@/components/MapLink";
 import CameraViewer from "@/components/CameraViewer";
 import HandwrittenText from "@/components/HandwrittenText";
 import { useRouter } from "next/navigation";
+import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,18 @@ export default function Home() {
       typeof window !== "undefined" &&
       !window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
+  // Right after logging in, the intro also opens with the logo glide; other
+  // visits skip it so the entrance is quicker
+  const [fromLogin] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const flagged = sessionStorage.getItem(HOME_INTRO_KEY) === "1";
+      sessionStorage.removeItem(HOME_INTRO_KEY);
+      return flagged;
+    } catch {
+      return false;
+    }
+  });
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
   const [allPhotos, setAllPhotos] = useState<Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }>>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
@@ -131,7 +144,7 @@ export default function Home() {
   // then glide up into its real spot and shrink to its real size
   const signedIn = authReady && !!user;
   useLayoutEffect(() => {
-    if (!playIntro || !signedIn) return;
+    if (!playIntro || !fromLogin || !signedIn) return;
     const logo = logoRefs.current.find((el) => el && el.offsetParent !== null);
     if (!logo) return;
     const rect = logo.getBoundingClientRect();
@@ -148,7 +161,7 @@ export default function Home() {
       ],
       { duration: 1100, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "both" }
     );
-  }, [playIntro, signedIn]);
+  }, [playIntro, fromLogin, signedIn]);
 
   // Photos are shuffled once on load, so stepping through them in order is still random
   const showNextPhoto = () => {
@@ -188,7 +201,9 @@ export default function Home() {
   }
 
   return (
-    <div className={`min-h-screen bg-green ${playIntro ? "home-intro" : ""}`}>
+    <div className={`min-h-screen bg-green ${
+        playIntro ? (fromLogin ? "home-intro" : "home-intro home-intro-quick") : ""
+      }`}>
       {/* Header */}
       <header
         className="bg-green min-h-screen flex items-center"

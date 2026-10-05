@@ -336,7 +336,9 @@ a {
   animation: timeline-node-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
-/* Homepage entrance, played on every visit (the logo glide is done in JS) */
+/* Homepage entrance, played on every visit. After logging in it waits for the
+   logo glide (done in JS); other visits skip the glide, so everything starts
+   --intro-skip earlier */
 @keyframes intro-drop-in {
   from {
     opacity: 0;
@@ -362,8 +364,12 @@ a {
   }
 }
 
+.home-intro-quick {
+  --intro-skip: 650ms;
+}
+
 .home-intro .intro-title {
-  animation: intro-drop-in 700ms cubic-bezier(0.22, 1, 0.36, 1) 700ms both;
+  animation: intro-drop-in 700ms cubic-bezier(0.22, 1, 0.36, 1) calc(700ms - var(--intro-skip, 0ms)) both;
 }
 
 .home-intro .intro-nav > *,
@@ -371,16 +377,16 @@ a {
   animation: intro-drop-in 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.home-intro .intro-nav > :nth-child(1) { animation-delay: 850ms; }
-.home-intro .intro-nav > :nth-child(2) { animation-delay: 930ms; }
-.home-intro .intro-nav > :nth-child(3) { animation-delay: 1010ms; }
-.home-intro .intro-nav > :nth-child(4) { animation-delay: 1090ms; }
-.home-intro .intro-nav > :nth-child(5) { animation-delay: 1170ms; }
-.home-intro .intro-nav-right > :nth-child(1) { animation-delay: 1170ms; }
-.home-intro .intro-nav-right > :nth-child(2) { animation-delay: 1250ms; }
+.home-intro .intro-nav > :nth-child(1) { animation-delay: calc(850ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav > :nth-child(2) { animation-delay: calc(930ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav > :nth-child(3) { animation-delay: calc(1010ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav > :nth-child(4) { animation-delay: calc(1090ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav > :nth-child(5) { animation-delay: calc(1170ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav-right > :nth-child(1) { animation-delay: calc(1170ms - var(--intro-skip, 0ms)); }
+.home-intro .intro-nav-right > :nth-child(2) { animation-delay: calc(1250ms - var(--intro-skip, 0ms)); }
 
 .home-intro .intro-camera {
-  animation: intro-camera-rise 1100ms cubic-bezier(0.34, 1.25, 0.64, 1) 1000ms both;
+  animation: intro-camera-rise 1100ms cubic-bezier(0.34, 1.25, 0.64, 1) calc(1000ms - var(--intro-skip, 0ms)) both;
 }
 
 /* Page entrances: each page's header drops in as it opens, and its main content
