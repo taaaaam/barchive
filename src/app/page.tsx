@@ -265,7 +265,7 @@ export default function Home() {
             </div>
 
             {/* Right side - Auth Status */}
-            <div className="intro-nav-right flex items-center gap-4 justify-self-end">
+            <div className="intro-nav-right relative z-20 flex items-center gap-4 justify-self-end">
               {user && userProfile && (
                 <Link
                   href="/newsletters"
@@ -357,7 +357,7 @@ export default function Home() {
             )}
 
             {/* Auth Status */}
-            <div className="intro-nav-right flex justify-center">
+            <div className="intro-nav-right relative z-20 flex justify-center">
               {user && userProfile ? (
                 <div
                   className={`transition-opacity duration-500 ease-in-out ${
