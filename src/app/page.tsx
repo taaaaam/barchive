@@ -17,7 +17,6 @@ import MapLink from "@/components/MapLink";
 import CameraViewer from "@/components/CameraViewer";
 import HandwrittenText from "@/components/HandwrittenText";
 import { useRouter } from "next/navigation";
-import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -29,20 +28,12 @@ export default function Home() {
   // False until Firebase reports whether someone is signed in, so neither
   // version of the page flashes before we know which one to show
   const [authReady, setAuthReady] = useState(false);
-  // Entrance animation, played once right after logging in
-  const [playIntro] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const flagged = sessionStorage.getItem(HOME_INTRO_KEY) === "1";
-      sessionStorage.removeItem(HOME_INTRO_KEY);
-      return (
-        flagged &&
-        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      );
-    } catch {
-      return false;
-    }
-  });
+  // Entrance animation, played every time the home page opens
+  const [playIntro] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   const logoRefs = useRef<(HTMLImageElement | null)[]>([]);
   const [allPhotos, setAllPhotos] = useState<Array<{ url: string; sourceType: 'post' | 'memory'; sourceTitle: string; sourceId?: string }>>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);

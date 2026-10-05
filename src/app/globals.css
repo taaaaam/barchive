@@ -336,7 +336,7 @@ a {
   animation: timeline-node-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
-/* Homepage entrance after logging in (the logo glide is done in JS) */
+/* Homepage entrance, played on every visit (the logo glide is done in JS) */
 @keyframes intro-drop-in {
   from {
     opacity: 0;

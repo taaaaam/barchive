@@ -14,7 +14,6 @@ import ClassSelection from "./ClassSelection";
 import MemberSelection, { ClaimedAccount } from "./MemberSelection";
 import ProfileSetup from "./ProfileSetup";
 import AdminDashboard from "./AdminDashboard";
-import { HOME_INTRO_KEY } from "@/lib/homeIntro";
 
 export default function Auth() {
   const [user, setUser] = useState<User | null>(null);
@@ -96,11 +95,6 @@ export default function Auth() {
 
   // Regular users go to the home page, which plays its intro animation
   const goHome = useCallback(() => {
-    try {
-      sessionStorage.setItem(HOME_INTRO_KEY, "1");
-    } catch {
-      // Storage unavailable (e.g. private mode); just skip the intro
-    }
     router.push("/");
   }, [router]);
 
